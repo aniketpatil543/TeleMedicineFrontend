@@ -8,6 +8,7 @@ import Login from "./pages/Auth/Login";
 import Signup from "./pages/Auth/Signup/Patient";
 import { Provider } from "react-redux";
 import { store } from "./store/store";
+import Dashboard from "./pages/Patient/Dashboard";
 
 function App() {
 
@@ -22,6 +23,7 @@ function App() {
            <Route path="/" element={<LandingPage></LandingPage>}></Route>
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
+          <Route path="/patient/dashboard" element={<Dashboard></Dashboard>}></Route>
         </Route>
 
         {/* LOGGED-IN USERS (ANY ROLE) */}
