@@ -6,11 +6,15 @@ import ProtectedRoute from "./routes/ProtectedRoute";
 import LandingPage from "./pages/Landing/LandingPage";
 import Login from "./pages/Auth/Login";
 import Signup from "./pages/Auth/Signup/Patient";
+import { Provider } from "react-redux";
+import { store } from "./store/store";
 
 function App() {
 
   return (
-       <BrowserRouter>
+      <Provider store={store}>
+
+         <BrowserRouter>
       <Routes>
 
         {/* PUBLIC ROUTES */}
@@ -18,7 +22,6 @@ function App() {
            <Route path="/" element={<LandingPage></LandingPage>}></Route>
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
-          {/* <Route path="/doctor/signup" element={<DoctorSignup />} />  */}
         </Route>
 
         {/* LOGGED-IN USERS (ANY ROLE) */}
@@ -38,6 +41,7 @@ function App() {
 
       </Routes>
     </BrowserRouter>
+      </Provider>
   )
 }
 
