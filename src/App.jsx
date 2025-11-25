@@ -3,9 +3,10 @@ import PublicRoutes from "./routes/PublicRoutes";
 import PatientRoutes from "./routes/PatientRoutes";
 import DoctorRoutes from "./routes/DoctorRoutes";
 import ProtectedRoute from "./routes/ProtectedRoute";
+
 import LandingPage from "./pages/Landing/LandingPage";
 import Login from "./pages/Auth/Login";
-import Signup from "./pages/Auth/Signup/Patient";
+import Signup from "./pages/Auth/Signup/Signup";
 
 function App() {
 
@@ -18,6 +19,7 @@ function App() {
            <Route path="/" element={<LandingPage></LandingPage>}></Route>
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
+           
           {/* <Route path="/doctor/signup" element={<DoctorSignup />} />  */}
         </Route>
 

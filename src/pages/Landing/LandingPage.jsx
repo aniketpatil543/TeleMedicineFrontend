@@ -90,7 +90,7 @@ const goToSignup = () => {
       {/* HERO - Professional Medical Design */}
       <section
         id="home"
-        className="relative w-full min-h-[650px] flex items-center mt-16 bg-gradient-to-r from-blue-50 to-blue-100"
+        className="relative w-full min-h-[650px] flex items-center mt-16 bg-[#F4F0FF]"
       >
         <div className="max-w-7xl mx-auto px-6 py-20 grid md:grid-cols-2 gap-12 items-center">
           <div>
@@ -333,7 +333,7 @@ const goToSignup = () => {
       </section>
 
       {/* HOW IT WORKS */}
-      <section id="how-it-works" className="py-20 px-6 bg-gradient-to-br from-blue-50 to-blue-100">
+      <section id="how-it-works" className="py-20 px-6 bg-[#F4F0FF]">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold text-gray-900 mb-4">How It Works</h2>
@@ -413,7 +413,7 @@ const goToSignup = () => {
       </section>
 
       {/* CTA SECTION */}
-      <section className="py-20 px-6 bg-blue-600 text-white">
+      <section className="py-20 px-6 bg-[#e09ff6] text-white">
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="text-4xl font-bold mb-6">Ready to Experience Better Healthcare?</h2>
           <p className="text-xl mb-8 text-blue-100">Join thousands of patients who trust MedicConsult for their healthcare needs</p>
