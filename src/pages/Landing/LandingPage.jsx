@@ -5,10 +5,22 @@ import { FaPhoneAlt } from "react-icons/fa";
 import { BsChatDotsFill, BsCalendar2CheckFill } from "react-icons/bs";
 import { IoFitnessSharp } from "react-icons/io5";
 import banner from "../../assets/bannerimg.jpg";
+import { useNavigate } from "react-router-dom";
 
 
 export default function LandingPage() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const navigate=useNavigate();
+
+
+const goToLogin = () => {
+  window.location.href = "/login";
+};
+
+const goToSignup = () => {
+  window.location.href = "/signup";
+};
+
 
   return (
     <div className="font-sans bg-white scroll-smooth min-h-screen">
@@ -17,13 +29,17 @@ export default function LandingPage() {
       <header className="fixed top-0 w-full z-50 bg-white shadow-sm border-b border-gray-200">
         <div className="max-w-7xl mx-auto flex justify-between items-center px-6 py-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-800 rounded-lg flex items-center justify-center">
-              <span className="text-white text-xl font-bold">M</span>
+            <div className=" h-12 rounded-lg flex items-center justify-center">
+              {/* <span className="text-white text-xl font-bold">M</span> */}
+              <img 
+               className="w-56 h-44"
+              src="./Logo1.png">
+              </img>
             </div>
-            <div>
+            {/* <div>
               <h1 className="text-xl font-bold text-gray-900">MedicConsult</h1>
               <p className="text-xs text-gray-500">Professional Healthcare</p>
-            </div>
+            </div> */}
           </div>
 
           <nav className="hidden md:flex space-x-8 text-gray-700 font-medium">
@@ -38,9 +54,17 @@ export default function LandingPage() {
            
             <a
               href="#login"
+              onClick={goToLogin}
               className="bg-blue-600 text-white px-6 py-2.5 rounded-lg hover:bg-blue-700 transition-all font-medium"
             >
-              Patient Login
+              Login
+            </a>
+             <a
+              href="#login"
+              className="bg-white text-black border border-blue-600 px-6 py-2.5 rounded-lg hover:bg-blue-700 hover:text-white transition-all font-medium"
+              onClick={goToSignup}
+            >
+              SignUp
             </a>
           </div>
 
