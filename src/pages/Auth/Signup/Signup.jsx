@@ -7,7 +7,7 @@ export default function Signup() {
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
-    email: "",
+    emailId: "",
     password: "",
     confirmPassword: "",
   });
@@ -31,10 +31,10 @@ export default function Signup() {
     if (!formData.firstName.trim()) newErrors.firstName = "First name is required";
     if (!formData.lastName.trim()) newErrors.lastName = "Last name is required";
     
-    if (!formData.email.trim())
-      newErrors.email = "Email is required";
+    if (!formData.emailId.trim())
+      newErrors.emailId = "Email is required";
     else if (!/\S+@\S+\.\S+/.test(formData.email))
-      newErrors.email = "Invalid email format";
+      newErrors.emailId = "Invalid email format";
 
     if (formData.password.length < 6)
       newErrors.password = "Password must be at least 6 characters";
@@ -102,7 +102,7 @@ export default function Signup() {
 
           <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
             
-            <div className="flex gap-4">
+            {/* <div className="flex gap-4">
               <div className="w-1/2">
                 <input
                   name="firstName"
@@ -124,17 +124,17 @@ export default function Signup() {
                 />
                 {errors.lastName && <p className="text-red-500 text-sm">{errors.lastName}</p>}
               </div>
-            </div>
+            </div> */}
 
             <div>
               <input
-                name="email"
+                name="emailId"
                 placeholder="Email Address"
-                value={formData.email}
+                value={formData.emailId}
                 onChange={handleChange}
                 className="w-full border px-4 py-3 rounded-xl focus:ring-2 focus:ring-purple-400 focus:outline-none"
               />
-              {errors.email && <p className="text-red-500 text-sm">{errors.email}</p>}
+              {errors.emailId && <p className="text-red-500 text-sm">{errors.emailId}</p>}
             </div>
 
             <div className="relative">

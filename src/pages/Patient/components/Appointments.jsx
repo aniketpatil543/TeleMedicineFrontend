@@ -7,7 +7,8 @@ import {
   FiMoreVertical,
   FiRefreshCw,
   FiX,
-  FiPlus
+  FiPlus,
+  FiCheck
 } from 'react-icons/fi';
 
 const Appointments = () => {
@@ -45,8 +46,14 @@ const Appointments = () => {
   ]);
 
   const [showCancelModal, setShowCancelModal] = useState(false);
+  const [showRescheduleModal, setShowRescheduleModal] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState(null);
   const [activeMenu, setActiveMenu] = useState(null);
+  const [rescheduleDate, setRescheduleDate] = useState('');
+  const [rescheduleTime, setRescheduleTime] = useState('');
+  const [rescheduleReason, setRescheduleReason] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -54,16 +61,49 @@ const Appointments = () => {
         return 'bg-[#E8F5E8] text-[#4CAF50]';
       case 'pending':
         return 'bg-[#FFF8E1] text-[#FFA000]';
+      case 'rescheduled':
+        return 'bg-[#E3F2FD] text-[#1976D2]';
       default:
         return 'bg-[#F4F0FF] text-[#8B5FBF]';
     }
   };
 
-  const handleReschedule = (appointmentId) => {
-    // Implement reschedule logic here
-    console.log('Rescheduling appointment:', appointmentId);
+  const handleReschedule = (appointment) => {
+    setSelectedAppointment(appointment);
+    setShowRescheduleModal(true);
     setActiveMenu(null);
-    alert('Reschedule functionality will be implemented here');
+    
+    // Set default reschedule date to current appointment date
+    setRescheduleDate(appointment.date);
+    setRescheduleTime(appointment.time.replace(' AM', '').replace(' PM', ''));
+    setRescheduleReason('');
+  };
+
+  const handleRescheduleSubmit = (e) => {
+    e.preventDefault();
+    
+    if (!rescheduleDate || !rescheduleTime) {
+      alert('Please select both date and time');
+      return;
+    }
+
+    if (selectedAppointment) {
+      const updatedAppointments = appointments.map(apt => 
+        apt.id === selectedAppointment.id 
+          ? { 
+              ...apt, 
+              date: rescheduleDate,
+              time: rescheduleTime + (parseInt(rescheduleTime.split(':')[0]) >= 12 ? ' PM' : ' AM'),
+              status: 'rescheduled'
+            }
+          : apt
+      );
+      
+      setAppointments(updatedAppointments);
+      setSuccessMessage(`Appointment with ${selectedAppointment.doctor} has been rescheduled to ${formatDate(rescheduleDate)} at ${rescheduleTime + (parseInt(rescheduleTime.split(':')[0]) >= 12 ? ' PM' : ' AM')}`);
+      setShowRescheduleModal(false);
+      setShowSuccessModal(true);
+    }
   };
 
   const handleCancel = (appointment) => {
@@ -88,7 +128,12 @@ const Appointments = () => {
 
   const closeModal = () => {
     setShowCancelModal(false);
+    setShowRescheduleModal(false);
+    setShowSuccessModal(false);
     setSelectedAppointment(null);
+    setRescheduleDate('');
+    setRescheduleTime('');
+    setRescheduleReason('');
   };
 
   const toggleMenu = (appointmentId) => {
@@ -101,6 +146,13 @@ const Appointments = () => {
       day: 'numeric',
       year: 'numeric'
     });
+  };
+
+  // Get tomorrow's date for min date in reschedule
+  const getTomorrowDate = () => {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    return tomorrow.toISOString().split('T')[0];
   };
 
   return (
@@ -164,7 +216,7 @@ const Appointments = () => {
                     {activeMenu === appointment.id && (
                       <div className="absolute right-0 top-10 bg-white rounded-lg shadow-lg border border-[#E8E0FF] z-10 min-w-48">
                         <button
-                          onClick={() => handleReschedule(appointment.id)}
+                          onClick={() => handleReschedule(appointment)}
                           className="w-full flex items-center space-x-3 px-4 py-3 text-left text-[#6D48C5] hover:bg-[#F4F0FF] transition-colors first:rounded-t-lg last:rounded-b-lg"
                         >
                           <FiRefreshCw className="text-[#8B5FBF]" />
@@ -186,6 +238,92 @@ const Appointments = () => {
           ))}
         </div>
       </div>
+
+      {/* Reschedule Modal */}
+      {showRescheduleModal && selectedAppointment && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-xl border border-[#E8E0FF]">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-semibold text-[#6D48C5]">Reschedule Appointment</h3>
+              <button
+                onClick={closeModal}
+                className="text-[#8B5FBF] hover:text-[#6D48C5] text-xl"
+              >
+                <FiX />
+              </button>
+            </div>
+
+            <div className="bg-[#F4F0FF] border border-[#E8E0FF] rounded-lg p-4 mb-6">
+              <p className="font-semibold text-[#6D48C5] text-center">{selectedAppointment.doctor}</p>
+              <p className="text-[#8B5FBF] text-sm text-center">{selectedAppointment.specialty}</p>
+              <p className="text-[#8B5FBF] text-sm text-center">
+                Current: {formatDate(selectedAppointment.date)} at {selectedAppointment.time}
+              </p>
+            </div>
+
+            <form onSubmit={handleRescheduleSubmit}>
+              <div className="space-y-4 mb-6">
+                <div>
+                  <label className="block text-sm font-medium text-[#6D48C5] mb-2">
+                    New Date
+                  </label>
+                  <input
+                    type="date"
+                    value={rescheduleDate}
+                    onChange={(e) => setRescheduleDate(e.target.value)}
+                    className="w-full p-3 border border-[#E8E0FF] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8B5FBF] focus:border-transparent"
+                    required
+                    min={getTomorrowDate()}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-[#6D48C5] mb-2">
+                    New Time
+                  </label>
+                  <input
+                    type="time"
+                    value={rescheduleTime}
+                    onChange={(e) => setRescheduleTime(e.target.value)}
+                    className="w-full p-3 border border-[#E8E0FF] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8B5FBF] focus:border-transparent"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-[#6D48C5] mb-2">
+                    Reason for Reschedule (Optional)
+                  </label>
+                  <textarea
+                    value={rescheduleReason}
+                    onChange={(e) => setRescheduleReason(e.target.value)}
+                    placeholder="Enter reason for rescheduling..."
+                    className="w-full p-3 border border-[#E8E0FF] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#8B5FBF] focus:border-transparent resize-none"
+                    rows="3"
+                  />
+                </div>
+              </div>
+
+              <div className="flex space-x-3">
+                <button
+                  type="button"
+                  onClick={closeModal}
+                  className="flex-1 bg-[#F4F0FF] hover:bg-[#E8E0FF] text-[#6D48C5] py-3 px-4 rounded-2xl font-medium transition-colors border border-[#E8E0FF]"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 bg-[#8B5FBF] hover:bg-[#7A4FA8] text-white py-3 px-4 rounded-2xl font-medium transition-colors flex items-center justify-center space-x-2"
+                >
+                  <FiRefreshCw />
+                  <span>Confirm Reschedule</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Cancel Confirmation Modal */}
       {showCancelModal && selectedAppointment && (
@@ -216,10 +354,31 @@ const Appointments = () => {
               </button>
               <button
                 onClick={confirmCancel}
-                className="flex-1 bg-red-600 hover:bg-red-700 text-white py-3 px-4 rounded-2xl font-medium transition-colors flex items-center justify-center space-x"
+                className="flex-1 bg-red-600 hover:bg-red-700 text-white py-3 px-4 rounded-2xl font-medium transition-colors flex items-center justify-center space-x-2"
               >
                 <FiX />
                 <span>Cancel Appointment</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Success Modal */}
+      {showSuccessModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-xl border border-[#E8E0FF]">
+            <div className="text-center">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <FiCheck className="text-green-600 text-2xl" />
+              </div>
+              <h3 className="text-xl font-semibold text-[#6D48C5] mb-2">Success!</h3>
+              <p className="text-[#8B5FBF] mb-6">{successMessage}</p>
+              <button
+                onClick={closeModal}
+                className="w-full bg-[#8B5FBF] hover:bg-[#7A4FA8] text-white py-3 px-4 rounded-2xl font-medium transition-colors"
+              >
+                OK
               </button>
             </div>
           </div>

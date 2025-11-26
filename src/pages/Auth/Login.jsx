@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { useState } from "react";
 import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
-
+import toast from "react-hot-toast";
 
 export default function Login() {
   const [form, setForm] = useState({ email: "", password: "" });
@@ -27,6 +27,8 @@ export default function Login() {
 
     if (!form.password.trim()) {
       newErrors.password = "Password is required";
+    } else if (form.password.length < 8) {
+      newErrors.password = "Password must be at least 8 characters long";
     }
 
     setErrors(newErrors);
@@ -35,9 +37,17 @@ export default function Login() {
 
   const handleLogin = (e) => {
     e.preventDefault();
+
     if (!validate()) return;
 
-    alert("Login Successful!");
+    // Replace alert with beautiful toast
+    toast.success("Login Successful!", {
+      style: {
+        borderRadius: "10px",
+        background: "#4B0082",
+        color: "#fff",
+      },
+    });
   };
 
   return (
@@ -46,32 +56,28 @@ export default function Login() {
       {/* LEFT SIDE */}
       <div className="hidden lg:flex w-1/2 relative flex-col items-center justify-center bg-gradient-to-br from-[#F7F4FF] to-[#E8E3FF] px-10 overflow-hidden">
 
-        {/* Accent Soft Blurs */}
+        {/* Soft Blurs */}
         <div className="absolute top-6 right-10 w-44 h-44 bg-purple-300/20 rounded-full blur-3xl"></div>
         <div className="absolute bottom-12 left-10 w-56 h-56 bg-blue-300/20 rounded-full blur-3xl"></div>
 
         <div className="relative z-10 flex flex-col items-center">
-
-          {/* Logo */}
           <img
             src="/Logo1.png"
             alt="Logo"
             className="w-72 -mb-5 drop-shadow-lg"
           />
 
-          {/* Heading */}
-          <h2 className="text-4xl font-semibold text-gray-900 text-center -mt-4 leading-tight ">
+          <h2 className="text-4xl font-semibold text-gray-900 text-center -mt-4 leading-tight">
             Welcome Back
           </h2>
 
           <p className="text-gray-600 text-lg mt-2 text-center max-w-md">
             Access your secure telemedicine dashboard anytime, anywhere.
           </p>
-
         </div>
       </div>
 
-      {/* RIGHT SIDE FORM */}
+      {/* RIGHT SIDE */}
       <div className="w-full lg:w-1/2 flex items-center justify-center px-6 py-10">
         <div className="bg-white p-10 w-full max-w-md rounded-2xl shadow-xl border border-gray-100">
 
@@ -82,7 +88,6 @@ export default function Login() {
             Continue to Telemedicine Portal
           </p>
 
-          {/* FORM */}
           <form onSubmit={handleLogin} className="mt-8 space-y-6">
 
             {/* Email */}
@@ -93,7 +98,9 @@ export default function Login() {
                 placeholder="Email Address"
                 onChange={handleChange}
                 className={`w-full border px-4 py-3 rounded-xl focus:ring-2 outline-none ${
-                  errors.email ? "border-red-500 focus:ring-red-400" : "focus:ring-purple-400 border-gray-300"
+                  errors.email
+                    ? "border-red-500 focus:ring-red-400"
+                    : "focus:ring-purple-400 border-gray-300"
                 }`}
               />
               {errors.email && (
@@ -109,7 +116,9 @@ export default function Login() {
                 placeholder="Password"
                 onChange={handleChange}
                 className={`w-full border px-4 py-3 pr-12 rounded-xl focus:ring-2 outline-none ${
-                  errors.password ? "border-red-500 focus:ring-red-400" : "focus:ring-purple-400 border-gray-300"
+                  errors.password
+                    ? "border-red-500 focus:ring-red-400"
+                    : "focus:ring-purple-400 border-gray-300"
                 }`}
               />
 
@@ -151,7 +160,6 @@ export default function Login() {
               Create Account
             </Link>
           </p>
-
         </div>
       </div>
     </div>

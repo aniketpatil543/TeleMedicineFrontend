@@ -7,7 +7,8 @@ import {
   FiUser,
   FiCalendar,
   FiSearch,
-  FiPrinter
+  FiPrinter,
+  FiChevronDown
 } from 'react-icons/fi';
 import { 
   TbPill,
@@ -15,7 +16,9 @@ import {
   TbPrescription
 } from 'react-icons/tb';
 
-const PrescriptionWriter = ({ patient }) => {
+const PrescriptionWriter = ({ todayAppointments = [] }) => {
+  const [selectedPatient, setSelectedPatient] = useState(null);
+  const [showPatientDropdown, setShowPatientDropdown] = useState(false);
   const [medications, setMedications] = useState([
     { id: 1, name: '', dosage: '', frequency: '', duration: '', instructions: '' }
   ]);
@@ -24,6 +27,61 @@ const PrescriptionWriter = ({ patient }) => {
   const medicationOptions = [
     'Lisinopril', 'Metoprolol', 'Atorvastatin', 'Metformin', 'Aspirin',
     'Amoxicillin', 'Ibuprofen', 'Omeprazole', 'Levothyroxine', 'Albuterol'
+  ];
+
+  // Mock data for today's appointments if not provided
+  const appointmentData = todayAppointments.length > 0 ? todayAppointments : [
+    {
+      id: 1,
+      patientName: 'John Smith',
+      time: '09:30 AM',
+      duration: '30 mins',
+      type: 'Follow-up',
+      reason: 'Hypertension Check',
+      status: 'confirmed',
+      appointmentType: 'in-person',
+      patientId: 'P001',
+      age: 45,
+      gender: 'Male',
+      contact: '+1 (555) 123-4567',
+      medicalHistory: ['Hypertension', 'High Cholesterol'],
+      notes: 'Regular follow-up for medication adjustment',
+      condition: 'Hypertension'
+    },
+    {
+      id: 2,
+      patientName: 'Maria Garcia',
+      time: '10:15 AM',
+      duration: '45 mins',
+      type: 'New Patient',
+      reason: 'Cardiac Consultation',
+      status: 'confirmed',
+      appointmentType: 'video',
+      patientId: 'P002',
+      age: 52,
+      gender: 'Female',
+      contact: '+1 (555) 234-5678',
+      medicalHistory: ['Cardiac Arrhythmia'],
+      notes: 'Initial consultation for cardiac symptoms',
+      condition: 'Cardiac Arrhythmia'
+    },
+    {
+      id: 3,
+      patientName: 'Robert Chen',
+      time: '11:00 AM',
+      duration: '30 mins',
+      type: 'Follow-up',
+      reason: 'Medication Review',
+      status: 'pending',
+      appointmentType: 'in-person',
+      patientId: 'P003',
+      age: 38,
+      gender: 'Male',
+      contact: '+1 (555) 345-6789',
+      medicalHistory: ['High Cholesterol', 'Diabetes'],
+      notes: 'Reviewing statin medication effectiveness',
+      condition: 'High Cholesterol'
+    }
   ];
 
   const addMedication = () => {
@@ -47,7 +105,12 @@ const PrescriptionWriter = ({ patient }) => {
 
   const handleSave = () => {
     // Save prescription logic
-    console.log('Saving prescription:', { medications, notes, patient });
+    console.log('Saving prescription:', { medications, notes, patient: selectedPatient });
+  };
+
+  const handlePatientSelect = (patient) => {
+    setSelectedPatient(patient);
+    setShowPatientDropdown(false);
   };
 
   return (
@@ -61,7 +124,7 @@ const PrescriptionWriter = ({ patient }) => {
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Write Prescription</h1>
             <p className="text-gray-600">
-              {patient ? `Prescribing for ${patient.name}` : 'Create new medication prescription'}
+              {selectedPatient ? `Prescribing for ${selectedPatient.patientName}` : 'Create new medication prescription'}
             </p>
           </div>
         </div>
@@ -91,35 +154,105 @@ const PrescriptionWriter = ({ patient }) => {
               Patient Information
             </h3>
             
-            {patient ? (
-              <div className="space-y-3">
+            {/* Patient Selection Dropdown */}
+            <div className="relative mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Select Patient *
+              </label>
+              <button
+                onClick={() => setShowPatientDropdown(!showPatientDropdown)}
+                className="w-full flex items-center justify-between px-4 py-3 border border-gray-300 rounded-xl bg-white hover:border-blue-400 transition-colors text-left"
+              >
+                <span className={selectedPatient ? "text-gray-900" : "text-gray-500"}>
+                  {selectedPatient ? selectedPatient.patientName : 'Choose from today\'s appointments'}
+                </span>
+                <FiChevronDown className={`text-gray-400 transition-transform ${showPatientDropdown ? 'rotate-180' : ''}`} />
+              </button>
+
+              {/* Dropdown Menu */}
+              {showPatientDropdown && (
+                <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-lg z-10 max-h-60 overflow-y-auto">
+                  {appointmentData.map((patient) => (
+                    <button
+                      key={patient.id}
+                      onClick={() => handlePatientSelect(patient)}
+                      className="w-full px-4 py-3 text-left hover:bg-blue-50 border-b border-gray-100 last:border-b-0 transition-colors"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="font-medium text-gray-900">{patient.patientName}</p>
+                          <p className="text-sm text-gray-600">
+                            {patient.patientId} • {patient.time} • {patient.type}
+                          </p>
+                        </div>
+                      </div>
+                      <p className="text-sm text-gray-500 mt-1">{patient.reason}</p>
+                    </button>
+                  ))}
+                  
+                  {appointmentData.length === 0 && (
+                    <div className="px-4 py-3 text-center text-gray-500">
+                      No appointments for today
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Selected Patient Details */}
+            {selectedPatient ? (
+              <div className="space-y-4 p-4 bg-blue-50 rounded-xl border border-blue-200">
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 bg-gradient-to-r from-purple-400 to-pink-400 rounded-xl flex items-center justify-center text-white font-semibold text-lg">
-                    {patient.name.charAt(0)}
+                    {selectedPatient.patientName.charAt(0)}
                   </div>
                   <div>
-                    <p className="font-semibold text-gray-900">{patient.name}</p>
-                    <p className="text-sm text-gray-600">{patient.age} years • {patient.gender}</p>
+                    <p className="font-semibold text-gray-900">{selectedPatient.patientName}</p>
+                    <p className="text-sm text-gray-600">
+                      {selectedPatient.age} years • {selectedPatient.gender}
+                    </p>
                   </div>
                 </div>
                 
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Condition:</span>
-                    <span className="font-medium text-gray-900">{patient.condition}</span>
+                    <span className="text-gray-600">Patient ID:</span>
+                    <span className="font-medium text-gray-900">{selectedPatient.patientId}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-gray-600">Last Visit:</span>
-                    <span className="font-medium text-gray-900">
-                      {new Date(patient.lastVisit).toLocaleDateString()}
-                    </span>
+                    <span className="text-gray-600">Condition:</span>
+                    <span className="font-medium text-gray-900">{selectedPatient.condition}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Appointment:</span>
+                    <span className="font-medium text-gray-900">{selectedPatient.time}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Type:</span>
+                    <span className="font-medium text-gray-900">{selectedPatient.type}</span>
                   </div>
                 </div>
+
+                {selectedPatient.medicalHistory && selectedPatient.medicalHistory.length > 0 && (
+                  <div>
+                    <p className="text-sm font-medium text-gray-700 mb-2">Medical History:</p>
+                    <div className="flex flex-wrap gap-1">
+                      {selectedPatient.medicalHistory.map((condition, index) => (
+                        <span 
+                          key={index}
+                          className="px-2 py-1 bg-purple-100 text-purple-800 rounded-full text-xs"
+                        >
+                          {condition}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             ) : (
-              <div className="text-center py-4">
+              <div className="text-center py-6 border-2 border-dashed border-gray-300 rounded-xl bg-gray-50">
                 <FiUser className="text-gray-300 text-3xl mx-auto mb-2" />
-                <p className="text-gray-500">Select a patient to prescribe medication</p>
+                <p className="text-gray-500 text-sm">Select a patient from today's appointments</p>
               </div>
             )}
           </div>
@@ -267,6 +400,14 @@ const PrescriptionWriter = ({ patient }) => {
           </div>
         </div>
       </div>
+
+      {/* Close dropdown when clicking outside */}
+      {showPatientDropdown && (
+        <div 
+          className="fixed inset-0 z-0" 
+          onClick={() => setShowPatientDropdown(false)}
+        />
+      )}
     </div>
   );
 };

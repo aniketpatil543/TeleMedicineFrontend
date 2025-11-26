@@ -10,7 +10,8 @@ import {
   FaFilePrescription,
   FaCalendarAlt,
   FaFile,
-  FaFileWord
+  FaFileWord,
+  FaTimes
 } from 'react-icons/fa';
 
 const MedicalRecords = () => {
@@ -288,15 +289,22 @@ const MedicalRecords = () => {
         </div>
       )}
 
-      {/* Upload Dialog - Increased Width */}
+      {/* Upload Dialog - Increased Width with Close Button */}
       {uploadDialogOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-2 z-50">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto"> {/* Changed from max-w-md to max-w-2xl */}
-            <div className="p-6 border-b border-gray-200">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            {/* Header with Close Button */}
+            <div className="p-6 border-b border-gray-200 flex justify-between items-center">
               <h2 className="text-xl font-semibold text-gray-900">Upload Medical Document</h2>
+              <button
+                onClick={() => setUploadDialogOpen(false)}
+                className="text-gray-400 hover:text-gray-600 hover:bg-gray-100 w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200"
+              >
+                <FaTimes className="text-lg" />
+              </button>
             </div>
             
-            <div className="p-2 space-y-3">
+            <div className="p-6 space-y-6">
               {/* File Input */}
               <input
                 type="file"
@@ -379,14 +387,21 @@ const MedicalRecords = () => {
         </div>
       )}
 
-      {/* Preview Dialog */}
+      {/* Preview Dialog with Close Button */}
       {previewDialogOpen && selectedDocument && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-2 z-50">
           <div className="bg-white rounded-2xl shadow-xl max-w-md w-full">
-            <div className="p-6 border-b border-gray-200">
+            {/* Header with Close Button */}
+            <div className="p-6 border-b border-gray-200 flex justify-between items-center">
               <h2 className="text-xl font-semibold text-gray-900 truncate">
                 {selectedDocument.filename}
               </h2>
+              <button
+                onClick={() => setPreviewDialogOpen(false)}
+                className="text-gray-400 hover:text-gray-600 hover:bg-gray-100 w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200"
+              >
+                <FaTimes className="text-lg" />
+              </button>
             </div>
             
             <div className="p-6">
