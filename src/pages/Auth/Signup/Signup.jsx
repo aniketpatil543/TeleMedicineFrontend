@@ -2,14 +2,16 @@ import { Link } from "react-router-dom";
 import { useState } from "react";
 import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
 import { FaCheckCircle } from "react-icons/fa";
+import axios from "axios";
 
 export default function Signup() {
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
-    email: "",
+    emailId: "",
     password: "",
     confirmPassword: "",
+    roles:["PATIENT"]
   });
 
   const [errors, setErrors] = useState({});
@@ -31,10 +33,10 @@ export default function Signup() {
     if (!formData.firstName.trim()) newErrors.firstName = "First name is required";
     if (!formData.lastName.trim()) newErrors.lastName = "Last name is required";
     
-    if (!formData.email.trim())
-      newErrors.email = "Email is required";
-    else if (!/\S+@\S+\.\S+/.test(formData.email))
-      newErrors.email = "Invalid email format";
+    if (!formData.emailId.trim())
+      newErrors.emailId = "emailId is required";
+    else if (!/\S+@\S+\.\S+/.test(formData.emailId))
+      newErrors.emailId = "Invalid emailId format";
 
     if (formData.password.length < 6)
       newErrors.password = "Password must be at least 6 characters";
@@ -47,19 +49,31 @@ export default function Signup() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (validateForm()) {
+
+       const response = await axios.post(`${import.meta.env.VITE_API_URL}/signup`,{
+        "emailId" :formData.emailId ,
+        "roles":formData.roles ,
+        "password":formData.password
+       }) ;
+       const data = await response.data ;
+
+
+       console.log("DATA ==> " +  data);
+       
+        
       alert("Account Created Successfully!");
     }
   };
 
 
   return (
-    <div className="w-full min-h-screen flex font-sans bg-white">
+    <div className="w-full h-screen flex font-sans bg-white">
 
       {/* LEFT SIDE */}
-      <div className="hidden lg:flex w-1/2 h-screen relative flex-col items-center justify-center bg-gradient-to-br from-[#F7F4FF] to-[#E8E3FF] px-10 overflow-hidden shadow-inner">
+      <div className="hidden lg:flex w-1/2 h-screen relative flex-col items-center justify-center bg-gradient-to-br from-[#c5b3f5] to-[#E8E3FF] px-10 overflow-hidden shadow-inner l">
 
         <img 
           src="/Logo1.png"
@@ -128,13 +142,13 @@ export default function Signup() {
 
             <div>
               <input
-                name="email"
-                placeholder="Email Address"
-                value={formData.email}
+                name="emailId"
+                placeholder="emailId Address"
+                value={formData.emailId}
                 onChange={handleChange}
                 className="w-full border px-4 py-3 rounded-xl focus:ring-2 focus:ring-purple-400 focus:outline-none"
               />
-              {errors.email && <p className="text-red-500 text-sm">{errors.email}</p>}
+              {errors.emailId && <p className="text-red-500 text-sm">{errors.emailId}</p>}
             </div>
 
             <div className="relative">
