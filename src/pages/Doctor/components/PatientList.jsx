@@ -191,4 +191,5 @@ const PatientList = ({ patients = [], detailed = false }) => {
   );
 };
 
+
 export default PatientList;
