@@ -12,6 +12,7 @@ const Dashboard = () => {
   const [activeSection, setActiveSection] = useState('overview');
   const [notifications, setNotifications] = useState([]);
   const [userData, setUserData] = useState(null);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
 
   useEffect(() => {
     // Mock data - replace with actual API calls
@@ -21,7 +22,42 @@ const Dashboard = () => {
       age: 45,
       bloodType: 'O+',
       lastCheckup: '2024-01-15',
-      phone: '+1 (555) 123-4567'
+      phone: '+1 (555) 123-4567',
+      memberSince: '2023-06-15',
+      upcomingAppointments: [
+        {
+          id: 1,
+          doctor: 'Dr. Sarah Wilson',
+          specialization: 'Cardiologist',
+          date: '2024-01-20',
+          time: '10:00 AM',
+          type: 'Video Consultation',
+          status: 'confirmed'
+        },
+        {
+          id: 2,
+          doctor: 'Dr. Michael Chen',
+          specialization: 'Dermatologist',
+          date: '2024-01-25',
+          time: '2:30 PM',
+          type: 'In-Person',
+          status: 'confirmed'
+        }
+      ],
+      recentPrescriptions: [
+        {
+          id: 1,
+          medication: 'Atorvastatin',
+          dosage: '20mg',
+          frequency: 'Once daily',
+          prescribedBy: 'Dr. Sarah Wilson',
+          date: '2024-01-15'
+        }
+      ],
+      medicalAlerts: [
+        'Annual physical due in 2 months',
+        'Prescription refill available'
+      ]
     };
     
     const mockNotifications = [
@@ -68,16 +104,20 @@ const Dashboard = () => {
     })));
   };
 
+  const toggleSidebar = () => {
+    setSidebarOpen(!sidebarOpen);
+  };
+
   const renderSection = () => {
     switch (activeSection) {
       case 'overview':
         return <Overview userData={userData} />;
       case 'appointments':
-        return <Appointments />;
+        return <Appointments appointments={userData?.upcomingAppointments || []} />;
       case 'medical-records':
         return <MedicalRecords />;
       case 'prescriptions':
-        return <Prescriptions />;
+        return <Prescriptions prescriptions={userData?.recentPrescriptions || []} />;
       case 'notifications':
         return <Notifications 
           notifications={notifications} 
@@ -97,9 +137,16 @@ const Dashboard = () => {
         activeSection={activeSection} 
         setActiveSection={setActiveSection}
         notificationCount={notifications.filter(n => !n.read).length}
+        sidebarOpen={sidebarOpen}
+        onToggleSidebar={toggleSidebar}
+        userData={userData}
       />
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <Header userData={userData} />
+      <div className={`flex-1 flex flex-col overflow-hidden transition-all duration-300 ${sidebarOpen ? 'ml-0' : 'ml-20'}`}>
+        <Header 
+          userData={userData} 
+          onToggleSidebar={toggleSidebar}
+          sidebarOpen={sidebarOpen}
+        />
         <main className="flex-1 overflow-y-auto p-6">
           {renderSection()}
         </main>

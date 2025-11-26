@@ -109,7 +109,7 @@ export default function Signup() {
                   placeholder="First Name"
                   value={formData.firstName}
                   onChange={handleChange}
-                  className="w-full border px-4 py-3 rounded-xl focus:ring-2 focus:ring-purple-400"
+                  className="w-full border px-4 py-3 rounded-xl focus:ring-2 focus:ring-purple-400 focus:outline-none"
                 />
                 {errors.firstName && <p className="text-red-500 text-sm">{errors.firstName}</p>}
               </div>
@@ -120,7 +120,7 @@ export default function Signup() {
                   placeholder="Last Name"
                   value={formData.lastName}
                   onChange={handleChange}
-                  className="w-full border px-4 py-3 rounded-xl focus:ring-2 focus:ring-purple-400"
+                  className="w-full border px-4 py-3 rounded-xl focus:ring-2 focus:ring-purple-400 focus:outline-none"
                 />
                 {errors.lastName && <p className="text-red-500 text-sm">{errors.lastName}</p>}
               </div>
@@ -132,7 +132,7 @@ export default function Signup() {
                 placeholder="Email Address"
                 value={formData.email}
                 onChange={handleChange}
-                className="w-full border px-4 py-3 rounded-xl focus:ring-2 focus:ring-purple-400"
+                className="w-full border px-4 py-3 rounded-xl focus:ring-2 focus:ring-purple-400 focus:outline-none"
               />
               {errors.email && <p className="text-red-500 text-sm">{errors.email}</p>}
             </div>
@@ -144,7 +144,7 @@ export default function Signup() {
                 placeholder="Password"
                 value={formData.password}
                 onChange={handleChange}
-                className="w-full border px-4 py-3 rounded-xl focus:ring-2 focus:ring-purple-400 pr-12"
+                className="w-full border px-4 py-3 rounded-xl focus:ring-2 focus:ring-purple-400 pr-12 focus:outline-none"
               />
               <span 
                 className="absolute right-3 top-3 text-xl cursor-pointer"
@@ -162,7 +162,7 @@ export default function Signup() {
                 placeholder="Confirm Password"
                 value={formData.confirmPassword}
                 onChange={handleChange}
-                className="w-full border px-4 py-3 rounded-xl focus:ring-2 focus:ring-purple-400 pr-12"
+                className="w-full border px-4 py-3 rounded-xl focus:ring-2 focus:ring-purple-400 pr-12 focus:outline-none"
               />
               <span 
                 className="absolute right-3 top-3 text-xl cursor-pointer"

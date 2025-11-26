@@ -1,139 +1,164 @@
-// components/Overview.jsx
 import React from 'react';
+import { FiCalendar, FiFileText, FiUser, FiBell, FiBarChart2 } from 'react-icons/fi';
+import { TbPill } from 'react-icons/tb';
 
 const Overview = ({ userData }) => {
-  const healthMetrics = [
-    { label: 'Heart Rate', value: '72 bpm', status: 'normal', icon: '❤️', color: 'bg-[#FF6B8B]' },
-    { label: 'Blood Pressure', value: '120/80', status: 'normal', icon: '💓', color: 'bg-[#8B5FBF]' },
-    { label: 'Blood Sugar', value: '98 mg/dL', status: 'normal', icon: '🩸', color: 'bg-[#6D48C5]' },
-    { label: 'Weight', value: '75 kg', status: 'stable', icon: '⚖️', color: 'bg-[#4A90E2]' }
+  const stats = [
+    { 
+      label: 'Upcoming Appointments', 
+      value: userData?.upcomingAppointments?.length || 0, 
+      icon: <FiCalendar className="text-2xl" />,
+      color: 'bg-blue-500'
+    },
+    { 
+      label: 'Active Prescriptions', 
+      value: userData?.recentPrescriptions?.length || 0, 
+      icon: <TbPill className="text-2xl" />,
+      color: 'bg-green-500'
+    },
+    { 
+      label: 'Medical Records', 
+      value: '12', 
+      icon: <FiFileText className="text-2xl" />,
+      color: 'bg-purple-500'
+    },
+    { 
+      label: 'Pending Alerts', 
+      value: userData?.medicalAlerts?.length || 0, 
+      icon: <FiBell className="text-2xl" />,
+      color: 'bg-orange-500'
+    }
   ];
 
-  const upcomingAppointments = [
-    { id: 1, doctor: 'Dr. Sarah Smith', date: 'Tomorrow, 2:00 PM', type: 'Regular Checkup' },
-    { id: 2, doctor: 'Dr. Michael Brown', date: 'Jan 25, 10:30 AM', type: 'Cardiology' }
-  ];
+  const upcomingAppointments = userData?.upcomingAppointments || [];
 
-  const recentPrescriptions = [
-    { id: 1, name: 'Amoxicillin', dosage: '500mg', frequency: '3 times daily', status: 'Active' },
-    { id: 2, name: 'Vitamin D', dosage: '1000 IU', frequency: 'Once daily', status: 'Active' }
-  ];
+  const recentPrescriptions = userData?.recentPrescriptions || [];
 
   return (
     <div className="space-y-6">
       {/* Welcome Card */}
-      <div className="bg-gradient-to-r from-[#8B5FBF] to-[#6D48C5] rounded-2xl p-6 text-white shadow-lg">
-        <h2 className="text-2xl font-bold mb-2">Good morning, {userData?.name}!</h2>
-        <p className="text-[#E8E0FF]">Your health is looking great today. Keep up the good work!</p>
+      <div className="bg-gradient-to-r from-purple-600 to-blue-600 rounded-2xl p-8 text-white shadow-lg">
+        <h2 className="text-3xl font-bold mb-2">Welcome back, {userData?.name}!</h2>
+        <p className="text-purple-100 text-lg">Your health journey matters to us</p>
+      </div>
+
+      {/* Stats Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {stats.map((stat, index) => (
+          <div key={index} className="bg-white rounded-xl shadow-sm border border-purple-100 p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-2xl font-bold text-purple-600">{stat.value}</p>
+                <p className="text-sm text-gray-600">{stat.label}</p>
+              </div>
+              <div className={`w-12 h-12 ${stat.color} rounded-full flex items-center justify-center text-white`}>
+                {stat.icon}
+              </div>
+            </div>
+          </div>
+        ))}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Health Metrics */}
-        <div className="lg:col-span-2 space-y-6">
-          <div className="bg-white rounded-2xl shadow-sm p-6 border border-[#E8E0FF]">
-            <h3 className="text-xl font-semibold text-[#6D48C5] mb-4">Health Metrics</h3>
-            <div className="grid grid-cols-2 gap-4">
-              {healthMetrics.map((metric, index) => (
-                <div key={index} className="bg-[#F4F0FF] rounded-xl p-4 border border-[#E8E0FF]">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-2xl">{metric.icon}</span>
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      metric.status === 'normal' 
-                        ? 'bg-[#E8F5E8] text-[#4CAF50]' 
-                        : 'bg-[#E8E0FF] text-[#6D48C5]'
-                    }`}>
-                      {metric.status}
-                    </span>
-                  </div>
-                  <p className="text-[#6D48C5] font-semibold text-lg">{metric.value}</p>
-                  <p className="text-[#8B5FBF] text-sm">{metric.label}</p>
-                </div>
-              ))}
-            </div>
+        {/* Upcoming Appointments */}
+        <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-purple-100 p-6">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-xl font-semibold text-purple-900 flex items-center space-x-2">
+              <FiCalendar />
+              <span>Upcoming Appointments</span>
+            </h3>
+            <button className="text-purple-600 hover:text-purple-700 font-medium">
+              View All
+            </button>
           </div>
-
-          {/* Recent Appointments */}
-          <div className="bg-white rounded-2xl shadow-sm p-6 border border-[#E8E0FF]">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-semibold text-[#6D48C5]">Upcoming Appointments</h3>
-              <button className="text-[#6D48C5] hover:text-[#8B5FBF] text-sm font-medium">
-                View All
-              </button>
-            </div>
-            <div className="space-y-4">
-              {upcomingAppointments.map(appointment => (
-                <div key={appointment.id} className="flex items-center justify-between p-4 bg-[#F4F0FF] rounded-lg border border-[#E8E0FF]">
-                  <div>
-                    <p className="font-semibold text-[#6D48C5]">{appointment.doctor}</p>
-                    <p className="text-[#8B5FBF] text-sm">{appointment.type}</p>
+          <div className="space-y-4">
+            {upcomingAppointments.map(appointment => (
+              <div key={appointment.id} className="flex items-center justify-between p-4 border border-purple-100 rounded-lg hover:bg-purple-50 transition-colors">
+                <div className="flex items-center space-x-4">
+                  <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
+                    <FiUser className="text-purple-600" />
                   </div>
-                  <div className="text-right">
-                    <p className="font-medium text-[#6D48C5]">{appointment.date}</p>
-                    <button className="text-[#6D48C5] hover:text-[#8B5FBF] text-sm">
-                      Details
-                    </button>
+                  <div>
+                    <p className="font-semibold text-gray-900">{appointment.doctor}</p>
+                    <p className="text-sm text-purple-600">{appointment.specialization}</p>
+                    <p className="text-sm text-gray-600">{appointment.date} at {appointment.time}</p>
                   </div>
                 </div>
-              ))}
-            </div>
+                <div className="text-right">
+                  <span className="inline-block px-3 py-1 text-xs bg-green-100 text-green-800 rounded-full">
+                    {appointment.status}
+                  </span>
+                  <p className="text-sm text-gray-600 mt-1">{appointment.type}</p>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
 
         {/* Right Sidebar */}
         <div className="space-y-6">
           {/* Patient Info */}
-          <div className="bg-white rounded-2xl shadow-sm p-6 border border-[#E8E0FF]">
-            <h3 className="text-xl font-semibold text-[#6D48C5] mb-4">Patient Information</h3>
+          <div className="bg-white rounded-xl shadow-sm border border-purple-100 p-6">
+            <h3 className="text-xl font-semibold text-purple-900 mb-4 flex items-center space-x-2">
+              <FiUser />
+              <span>Patient Information</span>
+            </h3>
             <div className="space-y-3">
               <div>
-                <p className="text-[#8B5FBF] text-sm">Age</p>
-                <p className="font-semibold text-[#6D48C5]">{userData?.age} years</p>
+                <p className="text-gray-600 text-sm">Age</p>
+                <p className="font-semibold text-purple-700">{userData?.age} years</p>
               </div>
               <div>
-                <p className="text-[#8B5FBF] text-sm">Blood Type</p>
-                <p className="font-semibold text-[#6D48C5]">{userData?.bloodType}</p>
+                <p className="text-gray-600 text-sm">Blood Type</p>
+                <p className="font-semibold text-purple-700">{userData?.bloodType}</p>
               </div>
               <div>
-                <p className="text-[#8B5FBF] text-sm">Last Checkup</p>
-                <p className="font-semibold text-[#6D48C5]">{userData?.lastCheckup}</p>
+                <p className="text-gray-600 text-sm">Last Checkup</p>
+                <p className="font-semibold text-purple-700">{userData?.lastCheckup}</p>
               </div>
             </div>
           </div>
 
           {/* Recent Prescriptions */}
-          <div className="bg-white rounded-2xl shadow-sm p-6 border border-[#E8E0FF]">
-            <h3 className="text-xl font-semibold text-[#6D48C5] mb-4">Current Prescriptions</h3>
+          <div className="bg-white rounded-xl shadow-sm border border-purple-100 p-6">
+            <h3 className="text-xl font-semibold text-purple-900 mb-4 flex items-center space-x-2">
+              <TbPill />
+              <span>Current Prescriptions</span>
+            </h3>
             <div className="space-y-3">
               {recentPrescriptions.map(prescription => (
-                <div key={prescription.id} className="p-3 bg-[#F4F0FF] rounded-lg border border-[#E8E0FF]">
+                <div key={prescription.id} className="p-3 bg-purple-50 rounded-lg border border-purple-100">
                   <div className="flex justify-between items-start mb-1">
-                    <p className="font-semibold text-[#6D48C5]">{prescription.name}</p>
-                    <span className="bg-[#E8F5E8] text-[#4CAF50] text-xs px-2 py-1 rounded-full">
-                      {prescription.status}
+                    <p className="font-semibold text-purple-700">{prescription.medication}</p>
+                    <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">
+                      Active
                     </span>
                   </div>
-                  <p className="text-[#8B5FBF] text-sm">{prescription.dosage}</p>
-                  <p className="text-[#8B5FBF] text-sm">{prescription.frequency}</p>
+                  <p className="text-purple-600 text-sm">{prescription.dosage}</p>
+                  <p className="text-purple-600 text-sm">{prescription.frequency}</p>
                 </div>
               ))}
             </div>
           </div>
 
           {/* Quick Actions */}
-          <div className="bg-white rounded-2xl shadow-sm p-6 border border-[#E8E0FF]">
-            <h3 className="text-xl font-semibold text-[#6D48C5] mb-4">Quick Actions</h3>
+          <div className="bg-white rounded-xl shadow-sm border border-purple-100 p-6">
+            <h3 className="text-xl font-semibold text-purple-900 mb-4 flex items-center space-x-2">
+              <FiBarChart2 />
+              <span>Quick Actions</span>
+            </h3>
             <div className="grid grid-cols-2 gap-3">
-              <button className="bg-gradient-to-r from-[#8B5FBF] to-[#6D48C5] hover:from-[#7A4FA8] hover:to-[#5D3AA8] text-white py-2 px-3 rounded-lg text-sm font-medium transition-all duration-200 shadow-sm">
+              <button className="p-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm font-medium">
                 Book Appointment
               </button>
-              <button className="bg-[#F4F0FF] hover:bg-[#E8E0FF] text-[#6D48C5] py-2 px-3 rounded-lg text-sm font-medium transition-colors border border-[#E8E0FF]">
-                Request Refill
+              <button className="p-3 border border-purple-200 text-purple-700 rounded-lg hover:bg-purple-50 transition-colors text-sm font-medium">
+                Upload Records
               </button>
-              <button className="bg-[#F4F0FF] hover:bg-[#E8E0FF] text-[#6D48C5] py-2 px-3 rounded-lg text-sm font-medium transition-colors border border-[#E8E0FF]">
-                View Records
+              <button className="p-3 border border-purple-200 text-purple-700 rounded-lg hover:bg-purple-50 transition-colors text-sm font-medium">
+                Message Doctor
               </button>
-              <button className="bg-[#F4F0FF] hover:bg-[#E8E0FF] text-[#6D48C5] py-2 px-3 rounded-lg text-sm font-medium transition-colors border border-[#E8E0FF]">
-                Contact Doctor
+              <button className="p-3 border border-purple-200 text-purple-700 rounded-lg hover:bg-purple-50 transition-colors text-sm font-medium">
+                View Results
               </button>
             </div>
           </div>

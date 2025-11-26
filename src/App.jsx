@@ -11,6 +11,7 @@ import Signup from "./pages/Auth/Signup/Signup";
 import { Provider } from "react-redux";
 import { store } from "./store/store";
 import Dashboard from "./pages/Patient/Dashboard";
+import DocDashboard from "./pages/Doctor/DoctorDashboard";
 
 
 function App() {
@@ -29,8 +30,8 @@ function App() {
 
            
           {/* <Route path="/doctor/signup" element={<DoctorSignup />} />  */}
-
-          <Route path="/patient/dashboard" element={<Dashboard></Dashboard>}></Route>
+            <Route path="/patient/dashboard" element={<  Dashboard/>} />
+          <Route path="/doctor/dashboard" element={<DocDashboard />} />
         </Route>
 
         {/* LOGGED-IN USERS (ANY ROLE) */}
