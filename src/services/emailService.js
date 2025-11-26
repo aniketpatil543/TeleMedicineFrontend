@@ -36,3 +36,19 @@ export const verifyOtp = async (email, otp) => {
     throw error;
   }
 };
+
+export const onboardingEmail = async (email,subject) => {
+  try {
+    const url = `${BASE_URL}/send-onboarding`;
+
+    const response = await axios.post(url, {
+      to: email,
+      subject:subject,
+    });
+
+    return response.data;
+  } catch (error) {
+    console.error("Error verifying OTP:", error.response?.data || error.message);
+    throw error;
+  }
+};

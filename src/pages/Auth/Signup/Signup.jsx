@@ -3,7 +3,7 @@ import { useState } from "react";
 import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
 import { FaCheckCircle } from "react-icons/fa";
 import axios from "axios";
-import { sendOtp, verifyOtp } from "../../../services/emailService";
+import { sendOtp, verifyOtp,onboardingEmail } from "../../../services/emailService";
 import { useNavigate } from "react-router-dom";
 
 export default function Signup() {
@@ -169,6 +169,7 @@ export default function Signup() {
       console.log("DATA ==> " + data);
       alert("Account Created Successfully!");
       
+      await onboardingEmail(formData.emailId,"Welcome to TeleMedicine")
       // Reset form
       setFormData({
         firstName: "",
@@ -181,6 +182,9 @@ export default function Signup() {
       setOtp("");
       setIsOtpSent(false);
       setIsOtpVerified(false);
+
+      goToLogin();
+      
       
     } catch (error) {
       console.error("Registration error:", error);
