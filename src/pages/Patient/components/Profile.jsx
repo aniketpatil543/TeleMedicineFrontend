@@ -1,27 +1,62 @@
-import React, { useState } from 'react';
-import { FiUser, FiMail, FiPhone, FiCalendar, FiEdit, FiSave, FiX, FiPlus, FiTrash2 } from 'react-icons/fi';
+// Profile.jsx
+import React, { useState, useEffect } from 'react';
+import { FiUser, FiMail, FiPhone, FiCalendar, FiEdit, FiSave, FiX, FiPlus, FiTrash2, FiAlertTriangle, FiHeart } from 'react-icons/fi';
 
-const Profile = ({ userData }) => {
-  const [isEditing, setIsEditing] = useState(false);
+const Profile = ({ userData, onProfileComplete, isProfileComplete }) => {
+  const [isEditing, setIsEditing] = useState(!isProfileComplete);
+  const [profileProgress, setProfileProgress] = useState(0);
   const [formData, setFormData] = useState({
-    name: userData?.name || '',
+    firstName: userData?.firstName || '',
+    lastName: userData?.lastName || '',
     email: userData?.email || '',
     phone: userData?.phone || '',
     age: userData?.age || '',
     bloodType: userData?.bloodType || '',
     lastCheckup: userData?.lastCheckup || '',
     address: userData?.address || '',
-    emergencyContacts: userData?.emergencyContacts || [
-      { id: 1, name: 'Jane Doe', relationship: 'Spouse', phone: '+1 (555) 987-6543' },
-      { id: 2, name: 'Robert Wilson', relationship: 'Brother', phone: '+1 (555) 456-7890' }
-    ],
     allergies: userData?.allergies || ['Penicillin'],
     conditions: userData?.conditions || ['Hypertension']
   });
 
-  const [newContact, setNewContact] = useState({ name: '', relationship: '', phone: '' });
   const [newAllergy, setNewAllergy] = useState('');
   const [newCondition, setNewCondition] = useState('');
+
+  // Load saved profile data
+  useEffect(() => {
+    const savedProfile = localStorage.getItem('patientProfile');
+    if (savedProfile) {
+      try {
+        const parsedProfile = JSON.parse(savedProfile);
+        setFormData(parsedProfile);
+      } catch (error) {
+        console.error('Error loading saved profile:', error);
+      }
+    }
+  }, []);
+
+  // Calculate profile completion percentage
+  useEffect(() => {
+    calculateProgress();
+  }, [formData]);
+
+  const calculateProgress = () => {
+    const requiredFields = [
+      formData.firstName,
+      formData.lastName,
+      formData.email,
+      formData.phone,
+      formData.age,
+      formData.bloodType,
+      formData.address
+    ];
+
+    const completedFields = requiredFields.filter(field => 
+      field !== undefined && field !== null && field !== ''
+    ).length;
+
+    const progress = Math.round((completedFields / requiredFields.length) * 100);
+    setProfileProgress(progress);
+  };
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({
@@ -31,48 +66,40 @@ const Profile = ({ userData }) => {
   };
 
   const handleSave = () => {
-    // Here you would typically make an API call to save the data
-    console.log('Saving profile data:', formData);
+    // Save to localStorage
+    localStorage.setItem('patientProfile', JSON.stringify(formData));
+    
+    // Check if profile is complete enough and trigger completion
+    if (profileProgress === 100 && !isProfileComplete && onProfileComplete) {
+      onProfileComplete(formData);
+    }
+    
     setIsEditing(false);
   };
 
   const handleCancel = () => {
-    setFormData({
-      name: userData?.name || '',
-      email: userData?.email || '',
-      phone: userData?.phone || '',
-      age: userData?.age || '',
-      bloodType: userData?.bloodType || '',
-      lastCheckup: userData?.lastCheckup || '',
-      address: userData?.address || '',
-      emergencyContacts: userData?.emergencyContacts || [
-        { id: 1, name: 'Jane Doe', relationship: 'Spouse', phone: '+1 (555) 987-6543' },
-        { id: 2, name: 'Robert Wilson', relationship: 'Brother', phone: '+1 (555) 456-7890' }
-      ],
-      allergies: userData?.allergies || ['Penicillin'],
-      conditions: userData?.conditions || ['Hypertension']
-    });
-    setIsEditing(false);
-  };
-
-  const addEmergencyContact = () => {
-    if (newContact.name && newContact.relationship && newContact.phone) {
-      setFormData(prev => ({
-        ...prev,
-        emergencyContacts: [
-          ...prev.emergencyContacts,
-          { id: Date.now(), ...newContact }
-        ]
-      }));
-      setNewContact({ name: '', relationship: '', phone: '' });
+    const savedProfile = localStorage.getItem('patientProfile');
+    if (savedProfile) {
+      try {
+        setFormData(JSON.parse(savedProfile));
+      } catch (error) {
+        console.error('Error loading saved profile:', error);
+      }
+    } else {
+      setFormData({
+        firstName: userData?.firstName || '',
+        lastName: userData?.lastName || '',
+        email: userData?.email || '',
+        phone: userData?.phone || '',
+        age: userData?.age || '',
+        bloodType: userData?.bloodType || '',
+        lastCheckup: userData?.lastCheckup || '',
+        address: userData?.address || '',
+        allergies: userData?.allergies || ['Penicillin'],
+        conditions: userData?.conditions || ['Hypertension']
+      });
     }
-  };
-
-  const removeEmergencyContact = (id) => {
-    setFormData(prev => ({
-      ...prev,
-      emergencyContacts: prev.emergencyContacts.filter(contact => contact.id !== id)
-    }));
+    setIsEditing(false);
   };
 
   const addAllergy = () => {
@@ -110,61 +137,112 @@ const Profile = ({ userData }) => {
   };
 
   const inputFields = [
-    { key: 'name', label: 'Full Name', icon: <FiUser className="text-purple-500" />, type: 'text' },
-    { key: 'email', label: 'Email Address', icon: <FiMail className="text-purple-500" />, type: 'email' },
-    { key: 'phone', label: 'Phone Number', icon: <FiPhone className="text-purple-500" />, type: 'tel' },
-    { key: 'age', label: 'Age', icon: <FiCalendar className="text-purple-500" />, type: 'number' },
-    { key: 'bloodType', label: 'Blood Type', icon: '🩸', type: 'text' },
-    { key: 'lastCheckup', label: 'Last Checkup', icon: <FiCalendar className="text-purple-500" />, type: 'date' },
-    { key: 'address', label: 'Address', icon: '🏠', type: 'text' }
+    { key: 'firstName', label: 'First Name', icon: <FiUser className="text-purple-500" />, type: 'text', required: true },
+    { key: 'lastName', label: 'Last Name', icon: <FiUser className="text-purple-500" />, type: 'text', required: true },
+    { key: 'email', label: 'Email Address', icon: <FiMail className="text-purple-500" />, type: 'email', required: true },
+    { key: 'phone', label: 'Phone Number', icon: <FiPhone className="text-purple-500" />, type: 'tel', required: true },
+    { key: 'age', label: 'Age', icon: <FiCalendar className="text-purple-500" />, type: 'number', required: true },
+    { key: 'bloodType', label: 'Blood Type', icon: '🩸', type: 'text', required: true },
+    { key: 'lastCheckup', label: 'Last Checkup', icon: <FiCalendar className="text-purple-500" />, type: 'date', required: false },
+    { key: 'address', label: 'Address', icon: '🏠', type: 'text', required: true }
   ];
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-purple-900">Profile</h2>
-        {!isEditing ? (
-          <button
-            onClick={() => setIsEditing(true)}
-            className="flex items-center space-x-2 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
-          >
-            <FiEdit />
-            <span>Edit Profile</span>
-          </button>
-        ) : (
-          <div className="flex space-x-3">
-            <button
-              onClick={handleCancel}
-              className="flex items-center space-x-2 bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg font-medium transition-colors"
-            >
-              <FiX />
-              <span>Cancel</span>
-            </button>
-            <button
-              onClick={handleSave}
-              className="flex items-center space-x-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
-            >
-              <FiSave />
-              <span>Save Changes</span>
-            </button>
+      {/* Header with Progress Indicator */}
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+        <div className="flex items-center gap-4">
+          <div className="w-16 h-16 bg-gradient-to-r from-purple-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg">
+            <FiUser className="text-white text-2xl" />
+          </div>
+          <div>
+            <h1 className="text-3xl font-bold text-purple-900">
+              {!isProfileComplete ? 'Complete Your Profile' : 'Patient Profile'}
+            </h1>
+            <p className="text-purple-600">
+              {!isProfileComplete 
+                ? 'Finish setting up your profile to access all features' 
+                : 'Manage your personal and medical information'
+              }
+            </p>
+          </div>
+        </div>
+        
+        {/* Progress Bar for Incomplete Profiles */}
+        {!isProfileComplete && (
+          <div className="w-full lg:w-64">
+            <div className="flex justify-between text-sm text-purple-600 mb-2">
+              <span>Profile Completion</span>
+              <span>{profileProgress}%</span>
+            </div>
+            <div className="w-full bg-purple-200 rounded-full h-2">
+              <div 
+                className="bg-green-600 h-2 rounded-full transition-all duration-300"
+                style={{ width: `${profileProgress}%` }}
+              ></div>
+            </div>
           </div>
         )}
+        
+        <div className="flex items-center gap-3">
+          {isEditing ? (
+            <>
+              <button
+                onClick={handleCancel}
+                className="px-4 py-2.5 border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-xl font-semibold transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSave}
+                disabled={!isEditing}
+                className="flex items-center gap-2 px-4 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <FiSave className="text-lg" />
+                {!isProfileComplete ? 'Complete Profile' : 'Save Changes'}
+              </button>
+            </>
+          ) : (
+            <button
+              onClick={() => setIsEditing(true)}
+              className="flex items-center gap-2 px-4 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl"
+            >
+              <FiEdit className="text-lg" />
+              Edit Profile
+            </button>
+          )}
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {/* Warning Banner for Incomplete Profile */}
+      {!isProfileComplete && (
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+          <div className="flex items-center gap-3">
+            <FiAlertTriangle className="text-amber-600 text-xl" />
+            <div>
+              <h4 className="font-semibold text-amber-800">Profile Setup Required</h4>
+              <p className="text-amber-700 text-sm">
+                Complete your profile to unlock all dashboard features like booking appointments, viewing medical records, and more.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className=" max-w-5xl gap-6">
         {/* Personal Information */}
         <div className="lg:col-span-2 space-y-6">
           <div className="bg-white rounded-2xl shadow-sm p-6 border border-purple-100">
             <h3 className="text-xl font-semibold text-purple-900 mb-4 flex items-center space-x-2">
               <FiUser className="text-purple-600" />
-              <span>Personal Information</span>
+              <span>Personal Information {!isProfileComplete && <span className="text-red-500">*</span>}</span>
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {inputFields.map((field) => (
                 <div key={field.key}>
                   <label className="block text-purple-700 text-sm font-medium mb-2 flex items-center space-x-2">
                     {field.icon}
-                    <span>{field.label}</span>
+                    <span>{field.label} {field.required && <span className="text-red-500">*</span>}</span>
                   </label>
                   {isEditing ? (
                     <input
@@ -173,6 +251,7 @@ const Profile = ({ userData }) => {
                       onChange={(e) => handleInputChange(field.key, e.target.value)}
                       className="w-full px-3 py-2 border border-purple-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none"
                       placeholder={`Enter ${field.label.toLowerCase()}`}
+                      required={field.required}
                     />
                   ) : (
                     <p className="text-purple-900 font-semibold px-3 py-2 bg-purple-50 rounded-lg">
@@ -184,126 +263,15 @@ const Profile = ({ userData }) => {
             </div>
           </div>
 
-          {/* Emergency Contacts */}
-          <div className="bg-white rounded-2xl shadow-sm p-6 border border-purple-100">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl font-semibold text-purple-900 flex items-center space-x-2">
-                <FiPhone className="text-purple-600" />
-                <span>Emergency Contacts</span>
-              </h3>
-              {isEditing && (
-                <span className="text-sm text-purple-600">{formData.emergencyContacts.length}/5</span>
-              )}
-            </div>
-            
-            <div className="space-y-4">
-              {formData.emergencyContacts.map((contact) => (
-                <div key={contact.id} className="flex items-center justify-between p-4 bg-purple-50 rounded-lg border border-purple-100">
-                  <div className="flex-1">
-                    {isEditing ? (
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                        <input
-                          type="text"
-                          value={contact.name}
-                          onChange={(e) => {
-                            const updatedContacts = formData.emergencyContacts.map(c =>
-                              c.id === contact.id ? { ...c, name: e.target.value } : c
-                            );
-                            setFormData(prev => ({ ...prev, emergencyContacts: updatedContacts }));
-                          }}
-                          className="px-3 py-2 border border-purple-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none"
-                          placeholder="Name"
-                        />
-                        <input
-                          type="text"
-                          value={contact.relationship}
-                          onChange={(e) => {
-                            const updatedContacts = formData.emergencyContacts.map(c =>
-                              c.id === contact.id ? { ...c, relationship: e.target.value } : c
-                            );
-                            setFormData(prev => ({ ...prev, emergencyContacts: updatedContacts }));
-                          }}
-                          className="px-3 py-2 border border-purple-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none"
-                          placeholder="Relationship"
-                        />
-                        <input
-                          type="tel"
-                          value={contact.phone}
-                          onChange={(e) => {
-                            const updatedContacts = formData.emergencyContacts.map(c =>
-                              c.id === contact.id ? { ...c, phone: e.target.value } : c
-                            );
-                            setFormData(prev => ({ ...prev, emergencyContacts: updatedContacts }));
-                          }}
-                          className="px-3 py-2 border border-purple-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none"
-                          placeholder="Phone"
-                        />
-                      </div>
-                    ) : (
-                      <>
-                        <p className="font-semibold text-purple-900">{contact.name}</p>
-                        <p className="text-purple-700 text-sm">{contact.relationship}</p>
-                        <p className="text-purple-700 text-sm">{contact.phone}</p>
-                      </>
-                    )}
-                  </div>
-                  {isEditing && (
-                    <button
-                      onClick={() => removeEmergencyContact(contact.id)}
-                      className="ml-4 text-red-500 hover:text-red-700 p-2"
-                    >
-                      <FiTrash2 />
-                    </button>
-                  )}
-                </div>
-              ))}
-
-              {isEditing && formData.emergencyContacts.length < 5 && (
-                <div className="p-4 bg-purple-25 rounded-lg border-2 border-dashed border-purple-200">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
-                    <input
-                      type="text"
-                      value={newContact.name}
-                      onChange={(e) => setNewContact(prev => ({ ...prev, name: e.target.value }))}
-                      className="px-3 py-2 border border-purple-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none"
-                      placeholder="Name"
-                    />
-                    <input
-                      type="text"
-                      value={newContact.relationship}
-                      onChange={(e) => setNewContact(prev => ({ ...prev, relationship: e.target.value }))}
-                      className="px-3 py-2 border border-purple-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none"
-                      placeholder="Relationship"
-                    />
-                    <input
-                      type="tel"
-                      value={newContact.phone}
-                      onChange={(e) => setNewContact(prev => ({ ...prev, phone: e.target.value }))}
-                      className="px-3 py-2 border border-purple-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none"
-                      placeholder="Phone"
-                    />
-                  </div>
-                  <button
-                    onClick={addEmergencyContact}
-                    className="flex items-center space-x-2 text-purple-600 hover:text-purple-700 font-medium"
-                  >
-                    <FiPlus />
-                    <span>Add Emergency Contact</span>
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Medical Information & Settings */}
-        <div className="space-y-6">
-          {/* Medical Summary */}
-          <div className="bg-white rounded-2xl shadow-sm p-6 border border-purple-100">
-            <h3 className="text-xl font-semibold text-purple-900 mb-4">Medical Summary</h3>
+          {/* Medical Information */}
+          {/* <div className="bg-white rounded-2xl shadow-sm p-6 border border-purple-100">
+            <h3 className="text-xl font-semibold text-purple-900 mb-4 flex items-center space-x-2">
+              <FiHeart className="text-purple-600" />
+              <span>Medical Information</span>
+            </h3> */}
             
             {/* Allergies */}
-            <div className="mb-6">
+            {/* <div className="mb-6">
               <div className="flex justify-between items-center mb-3">
                 <h4 className="font-semibold text-purple-800">Allergies</h4>
                 {isEditing && (
@@ -355,10 +323,10 @@ const Profile = ({ userData }) => {
                   </div>
                 )}
               </div>
-            </div>
+            </div> */}
 
             {/* Medical Conditions */}
-            <div>
+            {/* <div>
               <div className="flex justify-between items-center mb-3">
                 <h4 className="font-semibold text-purple-800">Medical Conditions</h4>
                 {isEditing && (
@@ -410,28 +378,93 @@ const Profile = ({ userData }) => {
                   </div>
                 )}
               </div>
+            </div> */}
+          
+        </div>
+
+        {/* Medical Emergency Card */}
+        {/* <div className="space-y-6">
+          
+          <div className="bg-gradient-to-br from-red-500 to-red-600 rounded-2xl shadow-lg p-6 text-white">
+            <div className="text-center mb-4">
+              <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-3">
+                <FiHeart className="text-white text-xl" />
+              </div>
+              <h3 className="text-xl font-bold mb-2">Medical Emergency Card</h3>
+              <p className="text-red-100 text-sm">Show this to medical personnel in case of emergency</p>
+            </div>
+            
+            <div className="space-y-3">
+              <div className="bg-white/10 rounded-lg p-3">
+                <p className="text-red-100 text-xs font-medium">Name</p>
+                <p className="font-semibold text-lg">
+                  {formData.firstName || 'First'} {formData.lastName || 'Last'}
+                </p>
+              </div>
+              
+              <div className="bg-white/10 rounded-lg p-3">
+                <p className="text-red-100 text-xs font-medium">Blood Type</p>
+                <p className="font-semibold text-lg">
+                  {formData.bloodType || 'Not specified'}
+                </p>
+              </div>
+              
+              <div className="bg-white/10 rounded-lg p-3">
+                <p className="text-red-100 text-xs font-medium">Age</p>
+                <p className="font-semibold text-lg">
+                  {formData.age || 'Not specified'} years
+                </p>
+              </div>
+              
+              {formData.allergies.length > 0 && (
+                <div className="bg-white/10 rounded-lg p-3">
+                  <p className="text-red-100 text-xs font-medium">Allergies</p>
+                  <p className="font-semibold text-sm">
+                    {formData.allergies.join(', ')}
+                  </p>
+                </div>
+              )}
+              
+              {formData.conditions.length > 0 && (
+                <div className="bg-white/10 rounded-lg p-3">
+                  <p className="text-red-100 text-xs font-medium">Conditions</p>
+                  <p className="font-semibold text-sm">
+                    {formData.conditions.join(', ')}
+                  </p>
+                </div>
+              )}
+              
+              <div className="bg-white/10 rounded-lg p-3">
+                <p className="text-red-100 text-xs font-medium">Emergency Contact</p>
+                <p className="font-semibold text-sm">
+                  {formData.phone || 'Not specified'}
+                </p>
+              </div>
+            </div>
+            
+            <div className="mt-4 text-center">
+              <p className="text-red-100 text-xs">
+                Last updated: {new Date().toLocaleDateString()}
+              </p>
             </div>
           </div>
 
-          {/* Account Settings */}
+          Quick Actions
           <div className="bg-white rounded-2xl shadow-sm p-6 border border-purple-100">
-            <h3 className="text-xl font-semibold text-purple-900 mb-4">Account Settings</h3>
+            <h3 className="text-xl font-semibold text-purple-900 mb-4">Quick Actions</h3>
             <div className="space-y-3">
               <button className="w-full bg-purple-600 hover:bg-purple-700 text-white py-3 px-4 rounded-lg font-medium transition-colors text-left">
-                Change Password
+                Download Emergency Card
               </button>
               <button className="w-full bg-purple-50 hover:bg-purple-100 text-purple-700 py-3 px-4 rounded-lg font-medium transition-colors border border-purple-200 text-left">
-                Privacy Settings
+                Share Medical Info
               </button>
               <button className="w-full bg-purple-50 hover:bg-purple-100 text-purple-700 py-3 px-4 rounded-lg font-medium transition-colors border border-purple-200 text-left">
-                Download Medical Records
-              </button>
-              <button className="w-full bg-red-50 hover:bg-red-100 text-red-700 py-3 px-4 rounded-lg font-medium transition-colors border border-red-200 text-left">
-                Delete Account
+                Print Medical Summary
               </button>
             </div>
           </div>
-        </div>
+        </div> */}
       </div>
     </div>
   );

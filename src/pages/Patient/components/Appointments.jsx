@@ -10,8 +10,10 @@ import {
   FiPlus,
   FiCheck
 } from 'react-icons/fi';
+import BookAppointment from "./BookAppointment";
 
-const Appointments = () => {
+
+const Appointments = ({ setActiveSection }) => {
   const [appointments, setAppointments] = useState([
     {
       id: 1,
@@ -160,10 +162,14 @@ const Appointments = () => {
       {/* Header */}
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold text-[#6D48C5]">Appointments</h2>
-        <button className="bg-gradient-to-r from-[#8B5FBF] to-[#6D48C5] hover:from-[#7A4FA8] hover:to-[#5D3AA8] text-white px-4 py-2 rounded-lg font-medium transition-all duration-200 shadow-sm flex items-center space-x-2">
-          <FiPlus />
-          <span>Book New Appointment</span>
-        </button>
+       <button
+  onClick={() => setActiveSection("book-appointment")}
+  className="bg-gradient-to-r from-[#8B5FBF] to-[#6D48C5] hover:from-[#7A4FA8] hover:to-[#5D3AA8] 
+  text-white px-4 py-2 rounded-lg font-medium transition-all duration-200 shadow-sm flex items-center space-x-2"
+>
+  <FiPlus />
+  <span>Book New Appointment</span>
+</button>
       </div>
 
       {/* Appointments List */}

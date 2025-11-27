@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+// DoctorProfile.jsx
+import React, { useState, useEffect } from 'react';
 import { 
   FiUser, 
   FiEdit2, 
@@ -12,7 +13,7 @@ import {
   FiShield,
   FiBell,
   FiLock,
-  FiGlobe
+  FiAlertTriangle
 } from 'react-icons/fi';
 import { 
   TbStethoscope,
@@ -20,34 +21,30 @@ import {
   TbLanguage
 } from 'react-icons/tb';
 
-const DoctorProfile = ({ doctor }) => {
-  const [isEditing, setIsEditing] = useState(false);
+const DoctorProfile = ({ doctorData, onProfileComplete, isProfileComplete }) => {
+  const [isEditing, setIsEditing] = useState(!isProfileComplete);
   const [activeTab, setActiveTab] = useState('profile');
+  const [profileProgress, setProfileProgress] = useState(0);
   
   const [profileData, setProfileData] = useState({
     personalInfo: {
-      firstName: 'Sarah',
-      lastName: 'Johnson',
-      email: 'sarah.johnson@medicare.com',
-      phone: '+1 (555) 123-4567',
-      address: '123 Medical Center Dr, Boston, MA 02115',
-      dateOfBirth: '1985-06-15',
-      gender: 'Female',
-      languages: ['English', 'Spanish']
+      firstName: '',
+      lastName: '',
+      email: '',
+      phone: '',
+      address: '',
+      dateOfBirth: '',
+      gender: '',
+      languages: []
     },
     professionalInfo: {
-      specialization: 'Cardiology',
-      licenseNumber: 'MD123456',
-      yearsOfExperience: 12,
+      specialization: '',
+      licenseNumber: '',
+      yearsOfExperience: '',
       education: [
-        { degree: 'MD', institution: 'Harvard Medical School', year: 2010 },
-        { degree: 'Residency in Cardiology', institution: 'Massachusetts General Hospital', year: 2014 }
+        { degree: '', institution: '', year: '' }
       ],
-      certifications: [
-        'Board Certified in Cardiology',
-        'Advanced Cardiac Life Support (ACLS)',
-        'Basic Life Support (BLS)'
-      ]
+      certifications: []
     },
     availability: {
       workingHours: {
@@ -73,17 +70,53 @@ const DoctorProfile = ({ doctor }) => {
     }
   });
 
-  const tabs = [
-    { id: 'profile', label: 'Personal Info', icon: <FiUser /> },
-    { id: 'professional', label: 'Professional', icon: <TbStethoscope /> },
-    { id: 'availability', label: 'Availability', icon: <FiCalendar /> },
-    { id: 'settings', label: 'Settings', icon: <FiShield /> }
-  ];
+  // Load saved profile data
+  useEffect(() => {
+    const savedProfile = localStorage.getItem('doctorProfile');
+    if (savedProfile) {
+      try {
+        const parsedProfile = JSON.parse(savedProfile);
+        setProfileData(parsedProfile);
+      } catch (error) {
+        console.error('Error loading saved profile:', error);
+      }
+    }
+  }, []);
+
+  // Calculate profile completion percentage
+  useEffect(() => {
+    calculateProgress();
+  }, [profileData]);
+
+  const calculateProgress = () => {
+    const requiredFields = [
+      profileData.personalInfo.firstName,
+      profileData.personalInfo.lastName,
+      profileData.personalInfo.email,
+      profileData.personalInfo.phone,
+      profileData.professionalInfo.specialization,
+      profileData.professionalInfo.licenseNumber,
+      profileData.professionalInfo.yearsOfExperience
+    ];
+
+    const completedFields = requiredFields.filter(field => 
+      field !== undefined && field !== null && field !== ''
+    ).length;
+
+    const progress = Math.round((completedFields / requiredFields.length) * 100);
+    setProfileProgress(progress);
+  };
 
   const handleSave = () => {
     setIsEditing(false);
-    // Save profile data logic here
-    console.log('Saving profile:', profileData);
+    
+    // Save to localStorage
+    localStorage.setItem('doctorProfile', JSON.stringify(profileData));
+    
+    // Check if profile is complete enough and trigger completion
+    if (profileProgress === 100 && !isProfileComplete && onProfileComplete) {
+      onProfileComplete(profileData);
+    }
   };
 
   const updateField = (section, field, value) => {
@@ -95,6 +128,13 @@ const DoctorProfile = ({ doctor }) => {
       }
     }));
   };
+
+  const tabs = [
+    { id: 'profile', label: 'Personal Info', icon: <FiUser /> },
+    { id: 'professional', label: 'Professional', icon: <TbStethoscope /> },
+    { id: 'availability', label: 'Availability', icon: <FiCalendar /> },
+    { id: 'settings', label: 'Settings', icon: <FiShield /> }
+  ];
 
   const renderTabContent = () => {
     switch (activeTab) {
@@ -113,17 +153,40 @@ const DoctorProfile = ({ doctor }) => {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {/* Header with Progress Indicator */}
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
         <div className="flex items-center gap-4">
           <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg">
             <FiUser className="text-white text-2xl" />
           </div>
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Doctor Profile</h1>
-            <p className="text-gray-600">Manage your professional information and settings</p>
+            <h1 className="text-3xl font-bold text-gray-900">
+              {!isProfileComplete ? 'Complete Your Profile' : 'Doctor Profile'}
+            </h1>
+            <p className="text-gray-600">
+              {!isProfileComplete 
+                ? 'Finish setting up your profile to access all features' 
+                : 'Manage your professional information and settings'
+              }
+            </p>
           </div>
         </div>
+        
+        {/* Progress Bar for Incomplete Profiles */}
+        {!isProfileComplete && (
+          <div className="w-full lg:w-64">
+            <div className="flex justify-between text-sm text-gray-600 mb-2">
+              <span>Profile Completion</span>
+              <span>{profileProgress}%</span>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-2">
+              <div 
+                className="bg-green-600 h-2 rounded-full transition-all duration-300"
+                style={{ width: `${profileProgress}%` }}
+              ></div>
+            </div>
+          </div>
+        )}
         
         <div className="flex items-center gap-3">
           {isEditing ? (
@@ -136,10 +199,11 @@ const DoctorProfile = ({ doctor }) => {
               </button>
               <button
                 onClick={handleSave}
-                className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl"
+                disabled={!isEditing}
+                className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <FiSave className="text-lg" />
-                Save Changes
+                {!isProfileComplete ? 'Complete Profile' : 'Save Changes'}
               </button>
             </>
           ) : (
@@ -154,6 +218,21 @@ const DoctorProfile = ({ doctor }) => {
         </div>
       </div>
 
+      {/* Warning Banner for Incomplete Profile */}
+      {!isProfileComplete && (
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+          <div className="flex items-center gap-3">
+            <FiAlertTriangle className="text-amber-600 text-xl" />
+            <div>
+              <h4 className="font-semibold text-amber-800">Profile Setup Required</h4>
+              <p className="text-amber-700 text-sm">
+                Complete your profile to unlock all dashboard features and start seeing patients.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* Sidebar */}
         <div className="lg:col-span-1">
@@ -161,15 +240,15 @@ const DoctorProfile = ({ doctor }) => {
             {/* Profile Summary */}
             <div className="text-center mb-6">
               <div className="w-24 h-24 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center text-white font-semibold text-2xl mx-auto mb-4">
-                {profileData.personalInfo.firstName.charAt(0)}
-                {profileData.personalInfo.lastName.charAt(0)}
+                {profileData.personalInfo.firstName?.charAt(0) || 'D'}
+                {profileData.personalInfo.lastName?.charAt(0) || 'R'}
               </div>
               <h3 className="text-xl font-bold text-gray-900">
-                Dr. {profileData.personalInfo.firstName} {profileData.personalInfo.lastName}
+                Dr. {profileData.personalInfo.firstName || 'Doctor'} {profileData.personalInfo.lastName || 'Name'}
               </h3>
-              <p className="text-blue-600 font-medium">{profileData.professionalInfo.specialization}</p>
+              <p className="text-blue-600 font-medium">{profileData.professionalInfo.specialization || 'Specialization'}</p>
               <p className="text-gray-500 text-sm mt-1">
-                {profileData.professionalInfo.yearsOfExperience} years experience
+                {profileData.professionalInfo.yearsOfExperience || '0'} years experience
               </p>
             </div>
 
@@ -178,16 +257,12 @@ const DoctorProfile = ({ doctor }) => {
               <div className="flex items-center justify-between p-3 bg-blue-50 rounded-xl">
                 <span className="text-sm text-blue-700">License</span>
                 <span className="text-sm font-medium text-blue-900">
-                  {profileData.professionalInfo.licenseNumber}
+                  {profileData.professionalInfo.licenseNumber || 'Not set'}
                 </span>
               </div>
               <div className="flex items-center justify-between p-3 bg-green-50 rounded-xl">
-                <span className="text-sm text-green-700">Patients Today</span>
-                <span className="text-sm font-medium text-green-900">8</span>
-              </div>
-              <div className="flex items-center justify-between p-3 bg-purple-50 rounded-xl">
-                <span className="text-sm text-purple-700">Rating</span>
-                <span className="text-sm font-medium text-purple-900">4.8/5</span>
+                <span className="text-sm text-green-700">Profile Complete</span>
+                <span className="text-sm font-medium text-green-900">{profileProgress}%</span>
               </div>
             </div>
           </div>
@@ -235,72 +310,77 @@ const DoctorProfile = ({ doctor }) => {
   );
 };
 
-// Tab Components
+// Tab Components (keep the same as your original)
 const PersonalInfoTab = ({ data, isEditing, onChange }) => (
   <div className="space-y-6">
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">First Name</label>
+        <label className="block text-sm font-medium text-gray-700 mb-2">First Name *</label>
         {isEditing ? (
           <input
             type="text"
-            value={data.firstName}
+            value={data.firstName || ''}
             onChange={(e) => onChange('personalInfo', 'firstName', e.target.value)}
             className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            placeholder="Enter your first name"
           />
         ) : (
-          <p className="text-gray-900 font-medium">{data.firstName}</p>
+          <p className="text-gray-900 font-medium">{data.firstName || 'Not set'}</p>
         )}
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">Last Name</label>
+        <label className="block text-sm font-medium text-gray-700 mb-2">Last Name *</label>
         {isEditing ? (
           <input
             type="text"
-            value={data.lastName}
+            value={data.lastName || ''}
             onChange={(e) => onChange('personalInfo', 'lastName', e.target.value)}
             className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            placeholder="Enter your last name"
           />
         ) : (
-          <p className="text-gray-900 font-medium">{data.lastName}</p>
+          <p className="text-gray-900 font-medium">{data.lastName || 'Not set'}</p>
         )}
       </div>
 
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
           <FiMail className="text-gray-400" />
-          Email
+          Email *
         </label>
         {isEditing ? (
           <input
             type="email"
-            value={data.email}
+            value={data.email || ''}
             onChange={(e) => onChange('personalInfo', 'email', e.target.value)}
             className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            placeholder="Enter your email"
           />
         ) : (
-          <p className="text-gray-900 font-medium">{data.email}</p>
+          <p className="text-gray-900 font-medium">{data.email || 'Not set'}</p>
         )}
       </div>
 
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
           <FiPhone className="text-gray-400" />
-          Phone
+          Phone *
         </label>
         {isEditing ? (
           <input
             type="tel"
-            value={data.phone}
+            value={data.phone || ''}
             onChange={(e) => onChange('personalInfo', 'phone', e.target.value)}
             className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            placeholder="Enter your phone number"
           />
         ) : (
-          <p className="text-gray-900 font-medium">{data.phone}</p>
+          <p className="text-gray-900 font-medium">{data.phone || 'Not set'}</p>
         )}
       </div>
 
+      {/* Rest of the PersonalInfoTab remains the same */}
       <div className="md:col-span-2">
         <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
           <FiMapPin className="text-gray-400" />
@@ -308,13 +388,14 @@ const PersonalInfoTab = ({ data, isEditing, onChange }) => (
         </label>
         {isEditing ? (
           <textarea
-            value={data.address}
+            value={data.address || ''}
             onChange={(e) => onChange('personalInfo', 'address', e.target.value)}
             rows="2"
             className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+            placeholder="Enter your address"
           />
         ) : (
-          <p className="text-gray-900 font-medium">{data.address}</p>
+          <p className="text-gray-900 font-medium">{data.address || 'Not set'}</p>
         )}
       </div>
 
@@ -326,12 +407,14 @@ const PersonalInfoTab = ({ data, isEditing, onChange }) => (
         {isEditing ? (
           <input
             type="date"
-            value={data.dateOfBirth}
+            value={data.dateOfBirth || ''}
             onChange={(e) => onChange('personalInfo', 'dateOfBirth', e.target.value)}
             className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
         ) : (
-          <p className="text-gray-900 font-medium">{new Date(data.dateOfBirth).toLocaleDateString()}</p>
+          <p className="text-gray-900 font-medium">
+            {data.dateOfBirth ? new Date(data.dateOfBirth).toLocaleDateString() : 'Not set'}
+          </p>
         )}
       </div>
 
@@ -340,19 +423,19 @@ const PersonalInfoTab = ({ data, isEditing, onChange }) => (
         {isEditing ? (
           <input
             type="text"
-            value={data.languages.join(', ')}
+            value={data.languages?.join(', ') || ''}
             onChange={(e) => onChange('personalInfo', 'languages', e.target.value.split(', '))}
             placeholder="English, Spanish, French"
             className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
         ) : (
           <div className="flex flex-wrap gap-2">
-            {data.languages.map((lang, index) => (
+            {data.languages?.map((lang, index) => (
               <span key={index} className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">
                 <TbLanguage className="inline mr-1" />
                 {lang}
               </span>
-            ))}
+            )) || 'Not set'}
           </div>
         )}
       </div>
@@ -360,81 +443,86 @@ const PersonalInfoTab = ({ data, isEditing, onChange }) => (
   </div>
 );
 
+// ProfessionalInfoTab, AvailabilityTab, and SettingsTab components remain the same as your original
+// ... (include them with similar required field indicators)
+
 const ProfessionalInfoTab = ({ data, isEditing, onChange }) => (
   <div className="space-y-6">
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">Specialization</label>
+        <label className="block text-sm font-medium text-gray-700 mb-2">Specialization *</label>
         {isEditing ? (
           <input
             type="text"
-            value={data.specialization}
+            value={data.specialization || ''}
             onChange={(e) => onChange('professionalInfo', 'specialization', e.target.value)}
             className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            placeholder="Enter your specialization"
           />
         ) : (
-          <p className="text-gray-900 font-medium">{data.specialization}</p>
+          <p className="text-gray-900 font-medium">{data.specialization || 'Not set'}</p>
         )}
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">License Number</label>
+        <label className="block text-sm font-medium text-gray-700 mb-2">License Number *</label>
         {isEditing ? (
           <input
             type="text"
-            value={data.licenseNumber}
+            value={data.licenseNumber || ''}
             onChange={(e) => onChange('professionalInfo', 'licenseNumber', e.target.value)}
             className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            placeholder="Enter your license number"
           />
         ) : (
-          <p className="text-gray-900 font-medium">{data.licenseNumber}</p>
+          <p className="text-gray-900 font-medium">{data.licenseNumber || 'Not set'}</p>
         )}
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">Years of Experience</label>
+        <label className="block text-sm font-medium text-gray-700 mb-2">Years of Experience *</label>
         {isEditing ? (
           <input
             type="number"
-            value={data.yearsOfExperience}
-            onChange={(e) => onChange('professionalInfo', 'yearsOfExperience', parseInt(e.target.value))}
+            value={data.yearsOfExperience || ''}
+            onChange={(e) => onChange('professionalInfo', 'yearsOfExperience', parseInt(e.target.value) || '')}
             className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            placeholder="Enter years of experience"
           />
         ) : (
-          <p className="text-gray-900 font-medium">{data.yearsOfExperience} years</p>
+          <p className="text-gray-900 font-medium">{data.yearsOfExperience ? `${data.yearsOfExperience} years` : 'Not set'}</p>
         )}
       </div>
     </div>
 
-    {/* Education */}
+    {/* Education and Certifications sections remain the same */}
     <div>
       <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
         <FiBook className="text-blue-600" />
         Education
       </h3>
       <div className="space-y-3">
-        {data.education.map((edu, index) => (
+        {data.education?.map((edu, index) => (
           <div key={index} className="p-4 bg-gray-50 rounded-xl border border-gray-200">
             <div className="flex justify-between items-start">
               <div>
-                <p className="font-medium text-gray-900">{edu.degree}</p>
-                <p className="text-gray-600 text-sm">{edu.institution}</p>
+                <p className="font-medium text-gray-900">{edu.degree || 'Degree not set'}</p>
+                <p className="text-gray-600 text-sm">{edu.institution || 'Institution not set'}</p>
               </div>
-              <span className="text-sm text-gray-500">{edu.year}</span>
+              <span className="text-sm text-gray-500">{edu.year || 'Year not set'}</span>
             </div>
           </div>
         ))}
       </div>
     </div>
 
-    {/* Certifications */}
     <div>
       <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
         <TbCertificate className="text-green-600" />
         Certifications
       </h3>
       <div className="space-y-2">
-        {data.certifications.map((cert, index) => (
+        {data.certifications?.map((cert, index) => (
           <div key={index} className="flex items-center gap-3 p-3 bg-green-50 rounded-xl border border-green-200">
             <FiAward className="text-green-600" />
             <span className="text-green-800 font-medium">{cert}</span>
@@ -445,6 +533,7 @@ const ProfessionalInfoTab = ({ data, isEditing, onChange }) => (
   </div>
 );
 
+// AvailabilityTab and SettingsTab remain the same as your original
 const AvailabilityTab = ({ data, isEditing, onChange }) => (
   <div className="space-y-6">
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

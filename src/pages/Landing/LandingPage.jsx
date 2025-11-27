@@ -55,13 +55,13 @@ const goToSignup = () => {
             <a
               href="#login"
               onClick={goToLogin}
-              className="bg-blue-600 text-white px-6 py-2.5 rounded-lg hover:bg-blue-700 transition-all font-medium"
+              className="bg-[#c384ea]  text-white px-6 py-2.5 rounded-2xl hover:bg-blue-700 transition-all font-medium"
             >
               Login
             </a>
              <a
               href="#login"
-              className="bg-white text-black border border-blue-600 px-6 py-2.5 rounded-lg hover:bg-blue-700 hover:text-white transition-all font-medium"
+              className="bg-white text-black border border-purple-700 px-6 py-2.5 rounded-2xl hover:bg-purple-500 hover:text-white transition-all font-medium"
               onClick={goToSignup}
             >
               SignUp
