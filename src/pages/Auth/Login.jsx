@@ -3,6 +3,7 @@ import { useState } from "react";
 import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { PERSIST_STORE_NAME } from "../../constants/constants";
 
 export default function Login() {
   const [form, setForm] = useState({ emailId: "", password: "" });
@@ -67,7 +68,7 @@ const handleLogin = async (e) => {
     const userData = response.data;
     
     // Store user data in localStorage
-    localStorage.setItem('userData', JSON.stringify(userData));
+    localStorage.setItem(PERSIST_STORE_NAME, JSON.stringify(userData));
     localStorage.setItem('authToken', userData.token || userData.accessToken);
     
     console.log("Login successful:", userData);

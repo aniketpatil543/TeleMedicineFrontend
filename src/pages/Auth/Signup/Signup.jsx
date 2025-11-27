@@ -5,6 +5,7 @@ import { FaCheckCircle } from "react-icons/fa";
 import axios from "axios";
 import { sendOtp, verifyOtp,onboardingEmail } from "../../../services/emailService";
 import { useNavigate } from "react-router-dom";
+import { register } from "../../../services/patientRegister";
 
 export default function Signup() {
   const [formData, setFormData] = useState({
@@ -165,7 +166,7 @@ export default function Signup() {
         "lastName": formData.lastName
       });
       
-      const data = await response.data;
+      const data = response;
       console.log("DATA ==> " + data);
       alert("Account Created Successfully!");
       
