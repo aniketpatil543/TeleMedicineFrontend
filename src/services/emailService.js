@@ -1,9 +1,11 @@
 import axios from "axios";
 
+const BASE_URL = "http://localhost:8081/api/notifications";
+
 
 export const sendOtp = async (email) => {
   try {
-    const url = `${import.meta.env.VITE_NOTIFICATION_URL}/send-otp`;
+    const url = `${BASE_URL}/send-otp`;
     console.log("Send OTP URL:", url);
 
     const response = await axios.post(url, {
