@@ -26,6 +26,7 @@ const Profile = ({ userData, onProfileComplete, isProfileComplete }) => {
   });
 
   const bloodGroups = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
+  const genderOptions = ['Male', 'Female', 'Other', 'Prefer not to say'];
 
   // Load profile data from backend/API
   useEffect(() => {
@@ -384,16 +385,16 @@ const Profile = ({ userData, onProfileComplete, isProfileComplete }) => {
                 <span>{field.label} {field.required && <span className="text-red-500">*</span>}</span>
               </label>
               {isEditing ? (
-                field.key === 'bloodType' ? (
+                field.type === 'select' ? (
                   <select
-                    value={formData.bloodType}
-                    onChange={(e) => handleInputChange('bloodType', e.target.value)}
+                    value={formData[field.key]}
+                    onChange={(e) => handleInputChange(field.key, e.target.value)}
                     className="w-full px-4 py-3 border border-purple-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all duration-200"
                     required={field.required}
                   >
-                    <option value="">Select Blood Type</option>
-                    {bloodGroups.map(group => (
-                      <option key={group} value={group}>{group}</option>
+                    <option value="">Select {field.label}</option>
+                    {field.options.map(option => (
+                      <option key={option} value={option}>{option}</option>
                     ))}
                   </select>
                 ) : (
@@ -409,8 +410,7 @@ const Profile = ({ userData, onProfileComplete, isProfileComplete }) => {
               ) : (
                 <div className="w-full px-4 py-3 bg-purple-50 rounded-xl border border-purple-100">
                   <p className="text-purple-900 font-semibold">
-                    {field.key === 'bloodType' && !formData.bloodType ? 'Not selected' : 
-                     formData[field.key] || 'Not provided'}
+                    {formData[field.key] || 'Not provided'}
                   </p>
                 </div>
               )}
