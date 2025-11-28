@@ -29,6 +29,31 @@ const DoctorProfile = ({ doctorData, onProfileComplete, isProfileComplete }) => 
   const [activeTab, setActiveTab] = useState('profile');
   const [profileProgress, setProfileProgress] = useState(0);
   const [loading, setLoading] = useState(false);
+
+  const genderOptions = ['Male', 'Female', 'Other', 'Prefer not to say'];
+  
+  const departmentOptions = [
+    'EMERGENCY',
+    'CARDIOLOGY',
+    'ORTHOPEDICS',
+    'NEUROLOGY',
+    'PEDIATRICS',
+    'RADIOLOGY',
+    'GENERAL_MEDICINE',
+    'DERMATOLOGY',
+    'GYNAECOLOGY'
+  ];
+
+  const specializationOptions = [
+    'CARDIOLOGY',
+    'DERMATOLOGY',
+    'PEDIATRICS',
+    'NEUROLOGY',
+    'ORTHOPEDICS',
+    'GENERAL_MEDICINE',
+    'PSYCHIATRY',
+    'GYNAECOLOGY'
+  ];
   
   const [profileData, setProfileData] = useState({
     // Personal Info Section
@@ -37,6 +62,7 @@ const DoctorProfile = ({ doctorData, onProfileComplete, isProfileComplete }) => 
     lastName: '',
     email: '',
     phone: '',
+    gender: '',
     address: '',
     
     // Professional Info Section  
@@ -84,6 +110,7 @@ const DoctorProfile = ({ doctorData, onProfileComplete, isProfileComplete }) => 
           lastName: data.lastName || '',
           email: data.email || '',
           phone: data.phone || '',
+          gender: data.gender || '',
           address: data.address || '',
           specialization: data.specialization || '',
           department: data.department || '',
@@ -142,6 +169,7 @@ const DoctorProfile = ({ doctorData, onProfileComplete, isProfileComplete }) => 
       profileData.firstName,
       profileData.lastName,
       profileData.email,
+      profileData.gender,
       profileData.phone,
       profileData.specialization,
       profileData.department,
@@ -253,13 +281,13 @@ const DoctorProfile = ({ doctorData, onProfileComplete, isProfileComplete }) => 
   const renderTabContent = () => {
     switch (activeTab) {
       case 'profile':
-        return <PersonalInfoTab data={profileData} isEditing={isEditing} onChange={updateField} />;
+        return <PersonalInfoTab data={profileData} isEditing={isEditing} onChange={updateField} genderOptions={genderOptions} />;
       case 'professional':
-        return <ProfessionalInfoTab data={profileData} isEditing={isEditing} onChange={updateField} />;
+        return <ProfessionalInfoTab data={profileData} isEditing={isEditing} onChange={updateField} departmentOptions={departmentOptions} specializationOptions={specializationOptions} />;
       case 'availability':
         return <AvailabilityTab data={profileData.availability} isEditing={isEditing} onChange={updateAvailabilityField} onWorkingHoursChange={updateWorkingHours} />;
       default:
-        return <PersonalInfoTab data={profileData} isEditing={isEditing} onChange={updateField} />;
+        return <PersonalInfoTab data={profileData} isEditing={isEditing} onChange={updateField} genderOptions={genderOptions} />;
     }
   };
 
@@ -373,6 +401,9 @@ const DoctorProfile = ({ doctorData, onProfileComplete, isProfileComplete }) => 
               </h3>
               <p className="text-blue-600 font-medium">{profileData.specialization || 'Specialization'}</p>
               <p className="text-gray-500 text-sm mt-1">
+                {profileData.department ? `${profileData.department} Department` : 'Department not set'}
+              </p>
+              <p className="text-gray-500 text-sm">
                 {profileData.experience || '0'} years experience
               </p>
             </div>
@@ -436,13 +467,14 @@ const DoctorProfile = ({ doctorData, onProfileComplete, isProfileComplete }) => 
 };
 
 // Personal Info Tab Component
-const PersonalInfoTab = ({ data, isEditing, onChange }) => {
+const PersonalInfoTab = ({ data, isEditing, onChange, genderOptions }) => {
   const personalFields = [
     { key: 'doctorId', label: 'Doctor ID', icon: <TbId className="text-blue-500" />, type: 'text', required: true },
     { key: 'firstName', label: 'First Name', icon: <FiUser className="text-blue-500" />, type: 'text', required: true },
     { key: 'lastName', label: 'Last Name', icon: <FiUser className="text-blue-500" />, type: 'text', required: true },
     { key: 'email', label: 'Email Address', icon: <FiMail className="text-blue-500" />, type: 'email', required: true },
     { key: 'phone', label: 'Phone Number', icon: <FiPhone className="text-blue-500" />, type: 'tel', required: true },
+    { key: 'gender', label: 'Gender', icon: <FiUser className="text-blue-500" />, type: 'select', required: true, options: genderOptions },
     { key: 'address', label: 'Address', icon: <FiMapPin className="text-blue-500" />, type: 'text', required: false }
   ];
 
@@ -456,14 +488,28 @@ const PersonalInfoTab = ({ data, isEditing, onChange }) => {
               <span>{field.label} {field.required && <span className="text-red-500">*</span>}</span>
             </label>
             {isEditing ? (
-              <input
-                type={field.type}
-                value={data[field.key] || ''}
-                onChange={(e) => onChange(field.key, e.target.value)}
-                className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder={`Enter ${field.label.toLowerCase()}`}
-                required={field.required}
-              />
+              field.type === 'select' ? (
+                <select
+                  value={data[field.key] || ''}
+                  onChange={(e) => onChange(field.key, e.target.value)}
+                  className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  required={field.required}
+                >
+                  <option value="">Select {field.label}</option>
+                  {field.options.map(option => (
+                    <option key={option} value={option}>{option}</option>
+                  ))}
+                </select>
+              ) : (
+                <input
+                  type={field.type}
+                  value={data[field.key] || ''}
+                  onChange={(e) => onChange(field.key, e.target.value)}
+                  className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder={`Enter ${field.label.toLowerCase()}`}
+                  required={field.required}
+                />
+              )
             ) : (
               <p className="text-gray-900 font-medium px-4 py-3 bg-gray-50 rounded-xl border border-gray-200">
                 {data[field.key] || 'Not provided'}
@@ -477,11 +523,31 @@ const PersonalInfoTab = ({ data, isEditing, onChange }) => {
 };
 
 // Professional Info Tab Component
-const ProfessionalInfoTab = ({ data, isEditing, onChange }) => {
+const ProfessionalInfoTab = ({ data, isEditing, onChange, departmentOptions, specializationOptions }) => {
   const professionalFields = [
-    { key: 'specialization', label: 'Specialization', icon: <TbStethoscope className="text-blue-500" />, type: 'text', required: true },
-    { key: 'department', label: 'Department', icon: <TbBuildingHospital className="text-blue-500" />, type: 'text', required: true },
-    { key: 'experience', label: 'Experience (Years)', icon: <FiAward className="text-blue-500" />, type: 'number', required: true }
+    { 
+      key: 'specialization', 
+      label: 'Specialization', 
+      icon: <TbStethoscope className="text-blue-500" />, 
+      type: 'select', 
+      required: true,
+      options: specializationOptions
+    },
+    { 
+      key: 'department', 
+      label: 'Department', 
+      icon: <TbBuildingHospital className="text-blue-500" />, 
+      type: 'select', 
+      required: true,
+      options: departmentOptions
+    },
+    { 
+      key: 'experience', 
+      label: 'Experience (Years)', 
+      icon: <FiAward className="text-blue-500" />, 
+      type: 'number', 
+      required: true 
+    }
   ];
 
   return (
@@ -494,14 +560,28 @@ const ProfessionalInfoTab = ({ data, isEditing, onChange }) => {
               <span>{field.label} {field.required && <span className="text-red-500">*</span>}</span>
             </label>
             {isEditing ? (
-              <input
-                type={field.type}
-                value={data[field.key] || ''}
-                onChange={(e) => onChange(field.key, e.target.value)}
-                className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder={`Enter ${field.label.toLowerCase()}`}
-                required={field.required}
-              />
+              field.type === 'select' ? (
+                <select
+                  value={data[field.key] || ''}
+                  onChange={(e) => onChange(field.key, e.target.value)}
+                  className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  required={field.required}
+                >
+                  <option value="">Select {field.label}</option>
+                  {field.options.map(option => (
+                    <option key={option} value={option}>{option}</option>
+                  ))}
+                </select>
+              ) : (
+                <input
+                  type={field.type}
+                  value={data[field.key] || ''}
+                  onChange={(e) => onChange(field.key, e.target.value)}
+                  className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder={`Enter ${field.label.toLowerCase()}`}
+                  required={field.required}
+                />
+              )
             ) : (
               <p className="text-gray-900 font-medium px-4 py-3 bg-gray-50 rounded-xl border border-gray-200">
                 {data[field.key] || 'Not provided'}

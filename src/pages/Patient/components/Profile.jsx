@@ -16,11 +16,12 @@ const Profile = ({ userData, onProfileComplete, isProfileComplete }) => {
     age: '',
     weight: '',
     bloodType: '',
-    address: '',
-    // Removed lastCheckup field
+    gender: '',
+    address: ''
   });
 
   const bloodGroups = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
+  const genderOptions = ['Male', 'Female', 'Other', 'Prefer not to say'];
 
   // Load profile data from backend/API
   useEffect(() => {
@@ -49,8 +50,8 @@ const Profile = ({ userData, onProfileComplete, isProfileComplete }) => {
           age: data.age || '',
           weight: data.weight || '',
           bloodType: data.bloodType || '',
+          gender: data.gender || '',
           address: data.address || '',
-          // Removed lastCheckup field
         });
       } else {
         console.error('Failed to fetch profile data');
@@ -96,6 +97,7 @@ const Profile = ({ userData, onProfileComplete, isProfileComplete }) => {
       formData.age,
       formData.weight,
       formData.bloodType,
+      formData.gender,
       formData.address
     ];
 
@@ -176,12 +178,11 @@ const Profile = ({ userData, onProfileComplete, isProfileComplete }) => {
     { key: 'lastName', label: 'Last Name', icon: <FiUser className="text-purple-500" />, type: 'text', required: true },
     { key: 'email', label: 'Email Address', icon: <FiMail className="text-purple-500" />, type: 'email', required: true },
     { key: 'phone', label: 'Phone Number', icon: <FiPhone className="text-purple-500" />, type: 'tel', required: true },
-     { key: 'bloodType', label: 'Blood Group', icon:<MdBloodtype className='text-purple-500'/> , type: 'select', required: true },
+    { key: 'bloodType', label: 'Blood Group', icon: <MdBloodtype className='text-purple-500'/>, type: 'select', required: true, options: bloodGroups },
+    { key: 'gender', label: 'Gender', icon: <FiUser className="text-purple-500" />, type: 'select', required: true, options: genderOptions },
     { key: 'age', label: 'Age', icon: <FiCalendar className="text-purple-500" />, type: 'number', required: true },
     { key: 'weight', label: 'Weight (kg)', icon: <FaWeight className='text-purple-500' />, type: 'number', required: true },
-   
     { key: 'address', label: 'Address', icon: <FiMapPin className="text-purple-500" />, type: 'text', required: true }
-    // Removed lastCheckup field
   ];
 
   if (loading) {
@@ -273,7 +274,7 @@ const Profile = ({ userData, onProfileComplete, isProfileComplete }) => {
           </h3>
           {!isProfileComplete && profileProgress < 100 && (
             <div className="text-sm text-amber-600 bg-amber-50 px-3 py-1 rounded-full border border-amber-200">
-              {7 - Math.round((profileProgress / 100) * 7)} fields remaining
+              {9 - Math.round((profileProgress / 100) * 9)} fields remaining
             </div>
           )}
         </div>
@@ -286,16 +287,16 @@ const Profile = ({ userData, onProfileComplete, isProfileComplete }) => {
                 <span>{field.label} {field.required && <span className="text-red-500">*</span>}</span>
               </label>
               {isEditing ? (
-                field.key === 'bloodType' ? (
+                field.type === 'select' ? (
                   <select
-                    value={formData.bloodType}
-                    onChange={(e) => handleInputChange('bloodType', e.target.value)}
+                    value={formData[field.key]}
+                    onChange={(e) => handleInputChange(field.key, e.target.value)}
                     className="w-full px-4 py-3 border border-purple-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all duration-200"
                     required={field.required}
                   >
-                    <option value="">Select Blood Type</option>
-                    {bloodGroups.map(group => (
-                      <option key={group} value={group}>{group}</option>
+                    <option value="">Select {field.label}</option>
+                    {field.options.map(option => (
+                      <option key={option} value={option}>{option}</option>
                     ))}
                   </select>
                 ) : (
@@ -311,8 +312,7 @@ const Profile = ({ userData, onProfileComplete, isProfileComplete }) => {
               ) : (
                 <div className="w-full px-4 py-3 bg-purple-50 rounded-xl border border-purple-100">
                   <p className="text-purple-900 font-semibold">
-                    {field.key === 'bloodType' && !formData.bloodType ? 'Not selected' : 
-                     formData[field.key] || 'Not provided'}
+                    {formData[field.key] || 'Not provided'}
                   </p>
                 </div>
               )}

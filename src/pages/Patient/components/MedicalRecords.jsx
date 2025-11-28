@@ -224,7 +224,7 @@ const MedicalRecords = () => {
               className="bg-white rounded-2xl shadow-sm border border-gray-200/60 hover:shadow-lg transition-all duration-300 overflow-hidden group hover:border-gray-300"
             >
               {/* Card Header */}
-              <div className="bg-teal-200 border-b border-blue-00 p-4">
+              <div className="bg-zinc-300 border-b border-blue-00 p-4">
                 <div className="flex items-center justify-between">
                   <div className="w-12 h-12 rounded-xl bg-blue-100 border border-blue-200 flex items-center justify-center text-blue-600">
                     {getDocumentIcon(doc)}
