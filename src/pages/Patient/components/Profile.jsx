@@ -11,6 +11,7 @@ const Profile = ({ userData, onProfileComplete, isProfileComplete }) => {
   const [profileProgress, setProfileProgress] = useState(0);
   const [loading, setLoading] = useState(false);
   const userAuthState = useSelector((state) => state.auth);
+  // userAuthState.user.id
   
   const [formData, setFormData] = useState({
     firstName: '',
@@ -105,7 +106,8 @@ const Profile = ({ userData, onProfileComplete, isProfileComplete }) => {
             age:data.age,
             phone:data.phone,
             firstName:data.firstName,
-            id:data.patientId
+            id:data.patientId,
+            bloodType: data.bloodGroup
           },
           role:"PATIENT",
           token:token
@@ -234,8 +236,8 @@ const Profile = ({ userData, onProfileComplete, isProfileComplete }) => {
         throw new Error(`Failed to update profile: ${response.status}`);
       }
 
-      const updatedPatient = await response.json();
-      console.log("Profile updated successfully:", updatedPatient);
+      // const updatedPatient = await response.json();
+      // console.log("Profile updated successfully:", updatedPatient);
 
       // Save to localStorage as backup
       // localStorage.setItem('patientProfile', JSON.stringify(formData));

@@ -29,7 +29,7 @@ const Dashboard = () => {
 
   useEffect(() => {
     // Load saved profile data first
-    const savedProfile = localStorage.getItem('patientProfile');
+    const savedProfile = localStorage.getItem('userData');
     if (savedProfile) {
       try {
         const parsedProfile = JSON.parse(savedProfile);
