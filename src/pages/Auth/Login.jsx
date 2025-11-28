@@ -4,7 +4,8 @@ import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { PERSIST_STORE_NAME } from "../../constants/constants";
-
+import { useDispatch } from "react-redux";
+import { loginSuccess } from "../../store/slices/authSlice";
 export default function Login() {
   const [form, setForm] = useState({ emailId: "", password: "" });
   const [showPass, setShowPass] = useState(false);
@@ -12,6 +13,7 @@ export default function Login() {
   const [isLoading, setIsLoading] = useState(false);
   const [apiError, setApiError] = useState("");
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -63,15 +65,21 @@ const handleLogin = async (e) => {
       }
     );
 
-    console.log('login response', response)
+    const userData = await response.data;
 
-    const userData = response.data;
+    // Update Redux store
+    const userAuthData = {
+      "user" : userData.userId,
+      "token": userData.jwtToken,
+      "role": userData.roles || userData.role,
+    }
+
+    dispatch(loginSuccess(userAuthData));
     
     // Store user data in localStorage
     localStorage.setItem(PERSIST_STORE_NAME, JSON.stringify(userData));
     localStorage.setItem('authToken', userData.token || userData.accessToken);
     
-    console.log("Login successful:", userData);
 
     // Parse JWT token to get roles
     const token = userData.token || userData.accessToken;
@@ -88,6 +96,7 @@ const handleLogin = async (e) => {
     }
 
   } catch (error) {
+    console.error("Login error:", error);
     // ... existing error handling code ...
   } finally {
     setIsLoading(false);
@@ -117,7 +126,6 @@ const parseJwt = (token) => {
 const redirectBasedOnRole = (roles) => {
   const userRoles = Array.isArray(roles) ? roles : [roles];
   
-  console.log('User roles:', userRoles);
   
   if (userRoles.includes("PATIENT")) {
     navigate("/patient/dashboard");

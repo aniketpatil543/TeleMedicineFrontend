@@ -3,21 +3,20 @@ import PublicRoutes from "./routes/PublicRoutes";
 import PatientRoutes from "./routes/PatientRoutes";
 import DoctorRoutes from "./routes/DoctorRoutes";
 import ProtectedRoute from "./routes/ProtectedRoute";
-
 import LandingPage from "./pages/Landing/LandingPage";
 import Login from "./pages/Auth/Login";
-
 import Signup from "./pages/Auth/Signup/Signup";
-import { Provider } from "react-redux";
-import { store } from "./store/store";
 import Dashboard from "./pages/Patient/Dashboard";
 import DocDashboard from "./pages/Doctor/DoctorDashboard";
-
+import { useSelector } from "react-redux";
 
 function App() {
+  // Accessing auth state from Redux store
+  const state = useSelector((state) => state.auth);
+  console.log("Auth State in App.jsx:", state);
 
   return (
-      <Provider store={store}>
+      
 
          <BrowserRouter>
       <Routes>
@@ -51,7 +50,7 @@ function App() {
 
       </Routes>
     </BrowserRouter>
-      </Provider>
+      
   )
 }
 
