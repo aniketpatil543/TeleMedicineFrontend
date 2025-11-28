@@ -19,6 +19,7 @@ const Profile = ({ userData, onProfileComplete, isProfileComplete }) => {
     weight: '',
     bloodType: '',
     address: '',
+    gender:''
     // Removed lastCheckup field
   });
 
@@ -52,6 +53,7 @@ const Profile = ({ userData, onProfileComplete, isProfileComplete }) => {
           weight: data.weight || '',
           bloodType: data.bloodType || '',
           address: data.address || '',
+          gender:formData.gender
           // Removed lastCheckup field
         });
       } else {
@@ -122,19 +124,36 @@ const Profile = ({ userData, onProfileComplete, isProfileComplete }) => {
 
       console.log("HANDLE SAVE CLICKED");
       
+      console.log("TOKEN  ==> " + localStorage.getItem('authToken'));
       
       // Save to backend API
       const response = await fetch(`${import.meta.env.VITE_PATIENT_SERVICE_BASE_URL}`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
+          'Authorization': `${userAuthState.token}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData),
+        credentials: 'include',
+        body: JSON.stringify({
+          patientId: userAuthState.user ,
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          emailId: formData.email,
+          phone: formData.phone ,
+          age: formData.age ,
+          weight: formData.weight,
+          bloodGroup: formData.bloodType,
+          address: formData.address,
+          gender: formData.gender
+          
+        }),
       });
 
       if (response.ok) {
         const updatedData = await response.json();
+
+        console.log(updatedData);
+        
         
         // Also save to localStorage as backup
         localStorage.setItem('patientProfile', JSON.stringify(formData));
@@ -179,9 +198,10 @@ const Profile = ({ userData, onProfileComplete, isProfileComplete }) => {
   const inputFields = [
     { key: 'firstName', label: 'First Name', icon: <FiUser className="text-purple-500" />, type: 'text', required: true },
     { key: 'lastName', label: 'Last Name', icon: <FiUser className="text-purple-500" />, type: 'text', required: true },
+    { key: 'gender', label: 'Patient Gender', icon: <FiUser className="text-purple-500" />, type: 'text', required: true },
     { key: 'email', label: 'Email Address', icon: <FiMail className="text-purple-500" />, type: 'email', required: true },
     { key: 'phone', label: 'Phone Number', icon: <FiPhone className="text-purple-500" />, type: 'tel', required: true },
-     { key: 'bloodType', label: 'Blood Group', icon:<MdBloodtype className='text-purple-500'/> , type: 'select', required: true },
+    { key: 'bloodType', label: 'Blood Group', icon:<MdBloodtype className='text-purple-500'/> , type: 'select', required: true },
     { key: 'age', label: 'Age', icon: <FiCalendar className="text-purple-500" />, type: 'number', required: true },
     { key: 'weight', label: 'Weight (kg)', icon: <FaWeight className='text-purple-500' />, type: 'number', required: true },
    
