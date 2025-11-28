@@ -293,7 +293,7 @@ const DoctorProfile = ({ doctorData, onProfileComplete, isProfileComplete }) => 
         </div>
         
         {/* Progress Bar for Incomplete Profiles */}
-        {/* {!isProfileComplete && (
+        {!isProfileComplete && (
           <div className="w-full lg:w-64">
             <div className="flex justify-between text-sm text-gray-600 mb-2">
               <span>Profile Completion</span>
@@ -306,7 +306,7 @@ const DoctorProfile = ({ doctorData, onProfileComplete, isProfileComplete }) => 
               ></div>
             </div>
           </div>
-        )} */}
+        )}
         
         <div className="flex items-center gap-3">
           {isEditing ? (
