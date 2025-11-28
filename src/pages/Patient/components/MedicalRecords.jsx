@@ -1,4 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState ,useEffect} from 'react';
+import axios from 'axios';
+import { useSelector } from 'react-redux';
+
+
 import { 
   FaCloudUploadAlt, 
   FaFileMedical, 
@@ -15,36 +19,55 @@ import {
 } from 'react-icons/fa';
 
 const MedicalRecords = () => {
+
+  // Read from redux store
+  const userAuthState = useSelector((state) => state.auth);
+
+  // Extract ID OR fallback to 1 for testing
+  const userId = userAuthState?.user?.id || 1;
+
+  console.log("Redux Patient ID:", userId);
+
+  useEffect(() => {
+  const fetchDocuments = async () => {
+    try {
+      console.log("Fetching documents for patient:", userId);
+
+      const response = await axios.get(
+        "http://localhost:8081/api/files/list",
+        {
+          headers: {
+            "X-Patient-Id": userId
+          }
+        }
+      );
+
+      console.log("Fetched docs:", response.data);
+
+      const mappedDocs = response.data.map((doc) => ({
+        id: doc.id,
+        filename: doc.fileName,
+        documentType: doc.documentType,
+        description: doc.description,
+        uploadDate: doc.uploadedAt,
+        recordDate: doc.recordDate,
+        size: "1 MB", // Backend does not store size
+        fileUrl: doc.fileUrl
+      }));
+
+      setDocuments(mappedDocs);
+    } catch (err) {
+      console.error("Error fetching documents:", err);
+      setError("Failed to load documents");
+    }
+  };
+
+  fetchDocuments();
+}, [userId]);
+
   // Mock data for demonstration
   const [documents, setDocuments] = useState([
-    {
-      id: 1,
-      filename: 'Blood_Test_Report.pdf',
-      documentType: 'Lab Report',
-      description: 'Complete blood count and lipid profile results from recent health checkup',
-      uploadDate: '2024-01-15',
-      recordDate: '2024-01-10',
-      size: '2.4 MB'
-    },
-    {
-      id: 2,
-      filename: 'XRay_Chest_Scan.jpg',
-      documentType: 'X-Ray',
-      description: 'Chest X-Ray for routine annual checkup and lung assessment',
-      uploadDate: '2024-01-10',
-      recordDate: '2024-01-08',
-      size: '1.8 MB'
-    },
-    {
-      id: 3,
-      filename: 'Doctor_Prescription_March.pdf',
-      documentType: 'Prescription',
-      description: 'Medication for blood pressure management and follow-up instructions',
-      uploadDate: '2024-01-05',
-      recordDate: '2024-01-05',
-      size: '0.8 MB'
-    }
-  ]);
+]);
 
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -95,40 +118,94 @@ const MedicalRecords = () => {
   };
 
   // Handle document upload
-  const handleUpload = () => {
+  
+
+const handleUpload = async () => {
+  try {
     if (!uploadForm.file || !uploadForm.documentType) {
-      setError('Please select a file and document type');
+      setError("Please select a file and document type");
       return;
     }
 
-    const newDocument = {
-      id: documents.length + 1,
-      filename: uploadForm.file.name,
-      documentType: uploadForm.documentType,
-      description: uploadForm.description,
-      uploadDate: new Date().toISOString().split('T')[0],
-      recordDate: uploadForm.recordDate,
-      size: `${(uploadForm.file.size / (1024 * 1024)).toFixed(1)} MB`
+        console.log("Sending upload request...");
+
+    // prepare formdata
+    const formData = new FormData();
+    formData.append("file", uploadForm.file);
+    formData.append("documentType", uploadForm.documentType);
+    formData.append("description", uploadForm.description);
+    formData.append("recordDate", uploadForm.recordDate);
+
+    // actual API call
+    const response = await axios.post(
+      "http://localhost:8081/api/files/upload",
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+          "X-Patient-Id": userId   //  send redux userId
+        }
+      }
+    );
+
+    const apiDoc = response.data;
+
+    // add returned doc to state
+    const newDoc = {
+      id: apiDoc.id,
+      filename: apiDoc.fileName,
+      documentType: apiDoc.documentType,
+      description: apiDoc.description,
+      uploadDate: apiDoc.uploadedAt,
+      recordDate: apiDoc.recordDate,
+      size: `${(uploadForm.file.size / (1024 * 1024)).toFixed(1)} MB`,
+      fileUrl: apiDoc.fileUrl     //  presigned URL
     };
 
-    setDocuments(prev => [newDocument, ...prev]);
-    setSuccess('Document uploaded successfully!');
+    setDocuments((prev) => [newDoc, ...prev]);
+
+    setSuccess("Document uploaded successfully!");
     setUploadDialogOpen(false);
+
+    // reset form
     setUploadForm({
       file: null,
-      documentType: '',
-      description: '',
-      recordDate: new Date().toISOString().split('T')[0]
+      documentType: "",
+      description: "",
+      recordDate: new Date().toISOString().split("T")[0]
     });
-  };
+
+  } catch (err) {
+    console.log("UPLOAD ERROR:", err);
+    setError("Upload failed. Check backend logs.");
+  }
+};
+
 
   // Handle document download
-  const handleDownload = (documentId, filename) => {
-    setSuccess(`Downloading ${filename}...`);
-    setTimeout(() => {
-      setSuccess(`${filename} downloaded successfully!`);
-    }, 1000);
-  };
+const handleDownload = async (doc) => {
+  try {
+    const response = await axios.get(
+      "http://localhost:8081/api/files/download-url",
+      {
+        params: { fileName: doc.filename },
+        headers: {
+          "X-Patient-Id": userId
+        }
+      }
+    );
+
+    const presignedUrl = response.data;
+
+    // Open link in browser (or download automatically)
+    window.open(presignedUrl, "_blank");
+
+  } catch (err) {
+    console.error("DOWNLOAD ERROR:", err);
+    setError("Failed to generate download link");
+  }
+};
+
 
   // Handle document preview
   const handlePreview = (document) => {
@@ -137,14 +214,23 @@ const MedicalRecords = () => {
   };
 
   // Handle document deletion
-  const handleDelete = (documentId) => {
-    if (!window.confirm('Are you sure you want to delete this document?')) {
-      return;
-    }
+const handleDelete = async (documentId) => {
+  if (!window.confirm("Are you sure you want to delete this document?"))
+    return;
+
+  try {
+    await axios.delete(`http://localhost:8081/api/files/delete/${documentId}`, {
+      headers: { "X-Patient-Id": userId }
+    });
 
     setDocuments(prev => prev.filter(doc => doc.id !== documentId));
-    setSuccess('Document deleted successfully');
-  };
+    setSuccess("Document deleted successfully");
+  } catch (err) {
+    console.error(err);
+    setError("Failed to delete document");
+  }
+};
+
 
   // Get document icon based on type and file extension
   const getDocumentIcon = (document) => {
@@ -269,7 +355,7 @@ const MedicalRecords = () => {
                     View
                   </button>
                   <button
-                    onClick={() => handleDownload(doc.id, doc.filename)}
+                    onClick={() => handleDownload(doc)}
                     className="flex-1 flex items-center justify-center gap-2 text-gray-600 hover:text-green-600 hover:bg-green-50 py-2 px-3 rounded-lg transition-all duration-200 font-medium text-sm"
                   >
                     <FaDownload />
@@ -436,7 +522,7 @@ const MedicalRecords = () => {
               )}
 
               <button
-                onClick={() => handleDownload(selectedDocument.id, selectedDocument.filename)}
+                onClick={() => handleDownload(selectedDocument)}
                 className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white py-3.5 rounded-xl font-semibold transition-all duration-200 hover:shadow-lg"
               >
                 <FaDownload />
