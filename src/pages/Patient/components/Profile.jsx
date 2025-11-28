@@ -3,15 +3,17 @@ import React, { useState, useEffect } from 'react';
 import { FiUser, FiMail, FiPhone, FiCalendar, FiEdit, FiSave, FiX, FiMapPin } from 'react-icons/fi';
 import { FaWeight } from "react-icons/fa";
 import { MdBloodtype } from "react-icons/md";
+import { useSelector } from 'react-redux';
 
 const Profile = ({ userData, onProfileComplete, isProfileComplete }) => {
   const [isEditing, setIsEditing] = useState(!isProfileComplete);
   const [profileProgress, setProfileProgress] = useState(0);
   const [loading, setLoading] = useState(false);
+  const userAuthState = useSelector((state)=>state.auth)
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
-    email: '',
+    email:userAuthState.emailId ||  '',
     phone: '',
     age: '',
     weight: '',
@@ -117,10 +119,13 @@ const Profile = ({ userData, onProfileComplete, isProfileComplete }) => {
   const handleSave = async () => {
     try {
       setLoading(true);
+
+      console.log("HANDLE SAVE CLICKED");
+      
       
       // Save to backend API
-      const response = await fetch('/api/patient/profile', {
-        method: 'PUT',
+      const response = await fetch(`${import.meta.env.VITE_PATIENT_SERVICE_BASE_URL}`, {
+        method: 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
           'Content-Type': 'application/json',

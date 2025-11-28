@@ -69,6 +69,7 @@ const handleLogin = async (e) => {
 
     // Update Redux store
     const userAuthData = {
+      "emailId" : userData.emailId ,
       "user" : userData.userId,
       "token": userData.jwtToken,
       "role": userData.roles || userData.role,
