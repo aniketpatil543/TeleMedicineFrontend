@@ -208,7 +208,7 @@ const Profile = ({ userData, onProfileComplete, isProfileComplete }) => {
       console.log("Updating profile for userId:", userId);
 
       const response = await fetch(
-        `${import.meta.env.VITE_PATIENT_SERVICE_BASE_URL}/${userId}`,
+        `${import.meta.env.VITE_DOCTOR_SERVICE_BASE_URL}/${userId}`,
         {
           method: "PUT",
           headers: {

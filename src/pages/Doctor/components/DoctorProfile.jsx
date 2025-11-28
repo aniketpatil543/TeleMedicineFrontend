@@ -1,4 +1,5 @@
 // DoctorProfile.jsx
+import axios from 'axios';
 import React, { useState, useEffect } from 'react';
 import { 
   FiUser, 
@@ -23,12 +24,14 @@ import {
   TbBuildingHospital,
   TbId
 } from 'react-icons/tb';
+import { useSelector } from 'react-redux';
 
 const DoctorProfile = ({ doctorData, onProfileComplete, isProfileComplete }) => {
   const [isEditing, setIsEditing] = useState(!isProfileComplete);
   const [activeTab, setActiveTab] = useState('profile');
   const [profileProgress, setProfileProgress] = useState(0);
   const [loading, setLoading] = useState(false);
+  const userAuthState = useSelector(state => state.auth);
 
   const genderOptions = ['Male', 'Female', 'Other', 'Prefer not to say'];
   
@@ -57,10 +60,10 @@ const DoctorProfile = ({ doctorData, onProfileComplete, isProfileComplete }) => 
   
   const [profileData, setProfileData] = useState({
     // Personal Info Section
-    doctorId: '',
+    
     firstName: '',
     lastName: '',
-    email: '',
+    email: userAuthState?.emailId || '',
     phone: '',
     gender: '',
     address: '',
@@ -165,7 +168,7 @@ const DoctorProfile = ({ doctorData, onProfileComplete, isProfileComplete }) => 
 
   const calculateProgress = () => {
     const requiredFields = [
-      profileData.doctorId,
+      
       profileData.firstName,
       profileData.lastName,
       profileData.email,
@@ -189,14 +192,35 @@ const DoctorProfile = ({ doctorData, onProfileComplete, isProfileComplete }) => 
       setLoading(true);
       
       // Save to backend API
-      const response = await fetch('/api/doctor/profile', {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(profileData),
-      });
+  const response = await axios.post(
+  `${import.meta.env.VITE_DOCTOR_SERVICE_BASE_URL}/manage/create`,
+  {
+    doctorId: userAuthState?.user?.id,
+    firstName: profileData.firstName,
+    lastName: profileData.lastName,
+    emailId: profileData.email,
+    phone: profileData.phone,
+    gender: profileData.gender,
+    address: profileData.address,
+
+    // Professional Info
+    specialization: profileData.specialization,
+    department: profileData.department,
+    experience: profileData.experience,
+  },
+  {
+    headers: {
+      Authorization: `${userAuthState?.token}`,
+      "Content-Type": "application/json",
+    },
+  }
+);
+
+const res = await response.data ;
+console.log("Response From Api ==> ");
+
+console.log(  res);
+
 
       if (response.ok) {
         // Also save to localStorage as backup
@@ -469,7 +493,7 @@ const DoctorProfile = ({ doctorData, onProfileComplete, isProfileComplete }) => 
 // Personal Info Tab Component
 const PersonalInfoTab = ({ data, isEditing, onChange, genderOptions }) => {
   const personalFields = [
-    { key: 'doctorId', label: 'Doctor ID', icon: <TbId className="text-blue-500" />, type: 'text', required: true },
+    // { key: 'doctorId', label: 'Doctor ID', icon: <TbId className="text-blue-500" />, type: 'text', required: false },
     { key: 'firstName', label: 'First Name', icon: <FiUser className="text-blue-500" />, type: 'text', required: true },
     { key: 'lastName', label: 'Last Name', icon: <FiUser className="text-blue-500" />, type: 'text', required: true },
     { key: 'email', label: 'Email Address', icon: <FiMail className="text-blue-500" />, type: 'email', required: true },
