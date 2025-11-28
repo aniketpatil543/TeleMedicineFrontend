@@ -196,7 +196,7 @@ const Dashboard = () => {
       duration: 3000,
       position: 'top-right'
     });
-    setActiveSection('overview');
+    // setActiveSection('overview');
   };
 
   const renderSection = () => {

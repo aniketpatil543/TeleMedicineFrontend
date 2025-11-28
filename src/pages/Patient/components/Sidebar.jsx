@@ -50,20 +50,20 @@ const Sidebar = ({
       badge: null,
       requiresCompleteProfile: true 
     },
-    { 
-      id: 'prescriptions', 
-      label: 'Prescriptions', 
-      icon: <TbPill className="text-lg" />, 
-      badge: null,
-      requiresCompleteProfile: true 
-    },
-    { 
-      id: 'notifications', 
-      label: 'Notifications', 
-      icon: <FiBell className="text-lg" />, 
-      badge: notificationCount,
-      requiresCompleteProfile: false 
-    },
+    // { 
+    //   id: 'prescriptions', 
+    //   label: 'Prescriptions', 
+    //   icon: <TbPill className="text-lg" />, 
+    //   badge: null,
+    //   requiresCompleteProfile: true 
+    // },
+    // { 
+    //   id: 'notifications', 
+    //   label: 'Notifications', 
+    //   icon: <FiBell className="text-lg" />, 
+    //   badge: notificationCount,
+    //   requiresCompleteProfile: false 
+    // },
     { 
       id: 'profile', 
       label: 'Profile', 
