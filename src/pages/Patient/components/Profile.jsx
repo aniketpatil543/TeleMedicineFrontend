@@ -3,21 +3,25 @@ import React, { useState, useEffect } from 'react';
 import { FiUser, FiMail, FiPhone, FiCalendar, FiEdit, FiSave, FiX, FiMapPin } from 'react-icons/fi';
 import { FaWeight } from "react-icons/fa";
 import { MdBloodtype } from "react-icons/md";
+import { useSelector,useDispatch } from 'react-redux';
+import { loginSuccess } from '../../../store/slices/authSlice';
 
 const Profile = ({ userData, onProfileComplete, isProfileComplete }) => {
   const [isEditing, setIsEditing] = useState(!isProfileComplete);
   const [profileProgress, setProfileProgress] = useState(0);
   const [loading, setLoading] = useState(false);
+  const userAuthState = useSelector((state) => state.auth);
+  
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
-    email: '',
+    email: userAuthState.emailId || '',
     phone: '',
     age: '',
     weight: '',
     bloodType: '',
-    gender: '',
-    address: ''
+    address: '',
+    gender: ''
   });
 
   const bloodGroups = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
@@ -28,55 +32,130 @@ const Profile = ({ userData, onProfileComplete, isProfileComplete }) => {
     fetchProfileData();
   }, []);
 
+  // Helper function to check if profile is complete
+  const checkProfileCompletion = (profileData) => {
+    const requiredFields = [
+      profileData.firstName,
+      profileData.lastName,
+      profileData.emailId || profileData.email,
+      profileData.phone,
+      profileData.age,
+      profileData.weight,
+      profileData.bloodGroup || profileData.bloodType,
+      profileData.address,
+      profileData.gender
+    ];
+
+    return requiredFields.every(field => 
+      field !== undefined && field !== null && field !== ''
+    );
+  };
+
+  const dispatch=useDispatch();
+
   const fetchProfileData = async () => {
     try {
       setLoading(true);
-      // Replace with your actual API endpoint
-      const response = await fetch('/api/patient/profile', {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
-          'Content-Type': 'application/json',
-        },
-      });
+      
+      // Get user data from localStorage
+      const userData = JSON.parse(localStorage.getItem('userData'));
+      const token = userData?.jwtToken?.split(' ')[1]; 
+      const userId = userData?.userId;
+
+      if (!userId || !token) {
+        console.error('User ID or token not found');
+        throw new Error('Authentication required');
+      }
+
+      console.log("Fetching profile for userId:", userId);
+      console.log("Using token:", token);
+
+      // Call your patient service API
+      const response = await fetch(
+        `${import.meta.env.VITE_PATIENT_SERVICE_BASE_URL}/${userId}`,
+        {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+        }
+      );
 
       if (response.ok) {
         const data = await response.json();
+        console.log('Profile data received:', data);
+        
+        // Map the backend DTO to your frontend formData structure
         setFormData({
           firstName: data.firstName || '',
           lastName: data.lastName || '',
-          email: data.email || '',
+          email: data.emailId || '', // Note: backend uses emailId, frontend uses email
           phone: data.phone || '',
           age: data.age || '',
           weight: data.weight || '',
-          bloodType: data.bloodType || '',
-          gender: data.gender || '',
+          bloodType: data.bloodGroup || '', // Note: backend uses bloodGroup, frontend uses bloodType
           address: data.address || '',
+          gender: data.gender || ''
         });
-      } else {
-        console.error('Failed to fetch profile data');
-        // Fallback to localStorage if API fails
-        const savedProfile = localStorage.getItem('patientProfile');
-        if (savedProfile) {
-          try {
-            const parsedProfile = JSON.parse(savedProfile);
-            setFormData(parsedProfile);
-          } catch (error) {
-            console.error('Error loading saved profile:', error);
-          }
+
+        dispatch(loginSuccess({
+          emailId:data.emailId,
+          user:{
+            age:data.age,
+            phone:data.phone,
+            firstName:data.firstName,
+            id:data.patientId
+          },
+          role:"PATIENT",
+          token:token
+        }))
+
+        // Check if profile is complete and notify parent component
+        const isComplete = checkProfileCompletion(data);
+        if (onProfileComplete) {
+          onProfileComplete(isComplete);
         }
+
+      } else if (response.status === 404) {
+        // Patient profile doesn't exist yet - this is normal for new users
+        console.log('No existing profile found - starting with empty form');
+        // Keep the default empty form data
+        if (onProfileComplete) {
+          onProfileComplete(false);
+        }
+      } else {
+        console.error('Failed to fetch profile data:', response.status, response.statusText);
+        throw new Error(`Failed to fetch profile: ${response.status}`);
       }
+
     } catch (error) {
       console.error('Error fetching profile:', error);
+      
       // Fallback to localStorage if API fails
       const savedProfile = localStorage.getItem('patientProfile');
       if (savedProfile) {
         try {
           const parsedProfile = JSON.parse(savedProfile);
           setFormData(parsedProfile);
-        } catch (error) {
-          console.error('Error loading saved profile:', error);
+          console.log('Loaded profile from localStorage fallback');
+        } catch (parseError) {
+          console.error('Error loading saved profile from localStorage:', parseError);
         }
+      } else {
+        // If no localStorage fallback, check if we have email from auth state
+        if (userAuthState.emailId) {
+          setFormData(prev => ({
+            ...prev,
+            email: userAuthState.emailId
+          }));
+        }
+      }
+      
+      // Notify parent that profile is not complete due to error
+      if (onProfileComplete) {
+        onProfileComplete(false);
       }
     } finally {
       setLoading(false);
@@ -97,8 +176,8 @@ const Profile = ({ userData, onProfileComplete, isProfileComplete }) => {
       formData.age,
       formData.weight,
       formData.bloodType,
-      formData.gender,
-      formData.address
+      formData.address,
+      formData.gender
     ];
 
     const completedFields = requiredFields.filter(field => 
@@ -119,50 +198,67 @@ const Profile = ({ userData, onProfileComplete, isProfileComplete }) => {
   const handleSave = async () => {
     try {
       setLoading(true);
-      
-      // Save to backend API
-      const response = await fetch('/api/patient/profile', {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      });
 
-      if (response.ok) {
-        const updatedData = await response.json();
-        
-        // Also save to localStorage as backup
-        localStorage.setItem('patientProfile', JSON.stringify(formData));
-        
-        // Check if profile is complete enough and trigger completion
-        if (profileProgress === 100 && !isProfileComplete && onProfileComplete) {
-          onProfileComplete(formData);
+      const userData = JSON.parse(localStorage.getItem("userData"));
+      const token = userData?.jwtToken.split(" ")[1];
+      const userId = userData?.userId;
+
+      console.log("Updating profile for userId:", userId);
+
+      const response = await fetch(
+        `${import.meta.env.VITE_PATIENT_SERVICE_BASE_URL}/${userId}`,
+        {
+          method: "PUT",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
+          body: JSON.stringify({
+            patientId: userId,
+            firstName: formData.firstName,
+            lastName: formData.lastName,
+            emailId: formData.email,
+            phone: formData.phone,
+            age: formData.age,
+            weight: formData.weight,
+            bloodGroup: formData.bloodType,
+            address: formData.address,
+            gender: formData.gender,
+          }),
         }
-        
-        setIsEditing(false);
-      } else {
-        console.error('Failed to update profile');
-        // Fallback to localStorage if API fails
-        localStorage.setItem('patientProfile', JSON.stringify(formData));
-        
-        if (profileProgress === 100 && !isProfileComplete && onProfileComplete) {
-          onProfileComplete(formData);
-        }
-        
-        setIsEditing(false);
+      );
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Failed to update profile:", response.status, errorText);
+        throw new Error(`Failed to update profile: ${response.status}`);
       }
-    } catch (error) {
-      console.error('Error updating profile:', error);
-      // Fallback to localStorage if API fails
-      localStorage.setItem('patientProfile', JSON.stringify(formData));
+
+      const updatedPatient = await response.json();
+      console.log("Profile updated successfully:", updatedPatient);
+
+      // Save to localStorage as backup
+      // localStorage.setItem('patientProfile', JSON.stringify(formData));
       
-      if (profileProgress === 100 && !isProfileComplete && onProfileComplete) {
-        onProfileComplete(formData);
+      // Check if profile is now complete
+      // const isComplete = checkProfileCompletion({
+      //   ...formData,
+      //   emailId: formData.email,
+      //   bloodGroup: formData.bloodType
+      // });
+      
+      // Notify parent component
+      if (onProfileComplete) {
+        onProfileComplete(isComplete);
       }
       
+      // Exit edit mode
       setIsEditing(false);
+
+    } catch (err) {
+      console.error("Error updating profile:", err);
+      // You might want to show an error message to the user here
     } finally {
       setLoading(false);
     }
@@ -176,10 +272,10 @@ const Profile = ({ userData, onProfileComplete, isProfileComplete }) => {
   const inputFields = [
     { key: 'firstName', label: 'First Name', icon: <FiUser className="text-purple-500" />, type: 'text', required: true },
     { key: 'lastName', label: 'Last Name', icon: <FiUser className="text-purple-500" />, type: 'text', required: true },
+    { key: 'gender', label: 'Patient Gender', icon: <FiUser className="text-purple-500" />, type: 'text', required: true },
     { key: 'email', label: 'Email Address', icon: <FiMail className="text-purple-500" />, type: 'email', required: true },
     { key: 'phone', label: 'Phone Number', icon: <FiPhone className="text-purple-500" />, type: 'tel', required: true },
-    { key: 'bloodType', label: 'Blood Group', icon: <MdBloodtype className='text-purple-500'/>, type: 'select', required: true, options: bloodGroups },
-    { key: 'gender', label: 'Gender', icon: <FiUser className="text-purple-500" />, type: 'select', required: true, options: genderOptions },
+    { key: 'bloodType', label: 'Blood Group', icon: <MdBloodtype className='text-purple-500'/>, type: 'select', required: true },
     { key: 'age', label: 'Age', icon: <FiCalendar className="text-purple-500" />, type: 'number', required: true },
     { key: 'weight', label: 'Weight (kg)', icon: <FaWeight className='text-purple-500' />, type: 'number', required: true },
     { key: 'address', label: 'Address', icon: <FiMapPin className="text-purple-500" />, type: 'text', required: true }

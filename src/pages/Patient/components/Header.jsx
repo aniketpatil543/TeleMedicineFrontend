@@ -1,8 +1,11 @@
 import React, { useState } from 'react';
 import { FiSearch, FiBell, FiMenu } from 'react-icons/fi';
+import { useSelector } from 'react-redux';
 
 const Header = ({ userData, onToggleSidebar, sidebarOpen }) => {
   const [showNotifications, setShowNotifications] = useState(false);
+   const userAuthState = useSelector((state) => state.auth);
+   console.log('userAuth',userAuthState)
 
   const currentDate = new Date().toLocaleDateString('en-US', {
     weekday: 'long',
@@ -23,7 +26,7 @@ const Header = ({ userData, onToggleSidebar, sidebarOpen }) => {
           </button>
           <div>
             <h1 className="text-2xl font-bold text-purple-900">
-              Welcome back, {userData?.name || 'Patient'}!
+              Welcome back, {userAuthState.user?.firstName || 'Patient'}!
             </h1>
             <p className="text-purple-600 mt-1">{currentDate}</p>
           </div>
@@ -31,17 +34,17 @@ const Header = ({ userData, onToggleSidebar, sidebarOpen }) => {
 
         <div className="flex items-center space-x-4">
           {/* Search Bar */}
-          <div className="relative hidden md:block">
+          {/* <div className="relative hidden md:block">
             <input
               type="text"
               placeholder="Search..."
               className="w-64 pl-10 pr-4 py-2 border border-purple-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none"
             />
             <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-purple-400" />
-          </div>
+          </div> */}
 
           {/* Notifications */}
-          <div className="relative">
+          {/* <div className="relative">
             <button 
               onClick={() => setShowNotifications(!showNotifications)}
               className="p-2 text-purple-600 hover:bg-purple-50 rounded-full transition-colors relative"
@@ -51,7 +54,7 @@ const Header = ({ userData, onToggleSidebar, sidebarOpen }) => {
                 3
               </span>
             </button>
-          </div>
+          </div> */}
 
           {/* User Profile */}
           <div className="flex items-center space-x-3">
@@ -59,7 +62,7 @@ const Header = ({ userData, onToggleSidebar, sidebarOpen }) => {
               {userData?.name?.charAt(0) || 'U'}
             </div>
             <div className="hidden sm:block">
-              <p className="text-sm font-medium text-gray-900">{userData?.name || 'User'}</p>
+              <p className="text-sm font-medium text-gray-900">{userAuthState.user?.firstName || 'User'}</p>
               <p className="text-xs text-purple-600">Patient</p>
             </div>
           </div>
