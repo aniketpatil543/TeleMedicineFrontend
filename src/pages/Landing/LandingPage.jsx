@@ -55,13 +55,13 @@ const goToSignup = () => {
             <a
               href="#login"
               onClick={goToLogin}
-              className="bg-[#c384ea]  text-white px-6 py-2.5 rounded-2xl hover:bg-blue-700 transition-all font-medium"
+              className="bg-[#a931d1]  text-white px-6 py-2.5 rounded-lg hover:bg-[#9939b9] transition-all font-medium"
             >
               Login
             </a>
              <a
               href="#login"
-              className="bg-white text-black border border-purple-700 px-6 py-2.5 rounded-2xl hover:bg-purple-500 hover:text-white transition-all font-medium"
+              className="bg-white text-black border border-purple-700 px-6 py-2.5 rounded-lg hover:bg-[#9225b7] hover:text-white transition-all font-medium"
               onClick={goToSignup}
             >
               SignUp
@@ -101,7 +101,7 @@ const goToSignup = () => {
             
             <h1 className="text-5xl md:text-6xl font-bold text-gray-900 leading-tight mb-6">
               Quality Healthcare,
-              <span className="text-blue-600"> Delivered Virtually</span>
+              <span className="text-[#9225b7]"> Delivered Virtually</span>
             </h1>
             
             <p className="text-xl text-gray-600 leading-relaxed mb-8">
@@ -111,7 +111,7 @@ const goToSignup = () => {
             <div className="flex flex-wrap gap-4 mb-10">
               <a
                 href="#book-appointment"
-                className="bg-blue-600 text-white px-8 py-4 rounded-lg hover:bg-blue-700 transition-all font-semibold shadow-lg hover:shadow-xl"
+                className="bg-[#9225b7] text-white px-8 py-4 rounded-lg hover:bg-blue-700 transition-all font-semibold shadow-lg hover:shadow-xl"
               >
                 Book Appointment
               </a>
@@ -150,7 +150,7 @@ const goToSignup = () => {
           </div>
 
           <div className="hidden md:block relative">
-            <div className="relative bg-white rounded-2xl shadow-2xl p-1 border border-gray-100">
+            <div className="relative bg-white rounded-2xl shadow-2xl  border border-gray-100">
               <img 
                 src={banner} 
                 alt="Healthcare Professional" 
@@ -413,7 +413,7 @@ const goToSignup = () => {
       </section>
 
       {/* CTA SECTION */}
-      <section className="py-20 px-6 bg-[#e09ff6] text-white">
+      <section className="py-20 px-6 bg-[#9225b7] text-white">
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="text-4xl font-bold mb-6">Ready to Experience Better Healthcare?</h2>
           <p className="text-xl mb-8 text-blue-100">Join thousands of patients who trust MedicConsult for their healthcare needs</p>

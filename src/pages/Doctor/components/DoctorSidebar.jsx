@@ -112,7 +112,7 @@ const DoctorSidebar = ({
         bg-gradient-to-b from-purple-700 to-purple-900 text-white 
         transition-all duration-300 ease-in-out
         flex flex-col overflow-y-auto
-        ${sidebarOpen ? 'w-64' : 'w-20'}
+        ${sidebarOpen ? 'w-72' : 'w-20'}
         ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
       `}>
         {/* Logo Section */}
