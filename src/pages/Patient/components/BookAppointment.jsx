@@ -169,19 +169,28 @@ useEffect(() => {
 
 // Helper function to convert 12-hour time to 24-hour format
 const convertTo24Hour = (time12h) => {
-  const [time, modifier] = time12h.split(' ');
-  let [hours, minutes] = time.split(':');
-  
-  if (hours === '12') {
-    hours = '00';
+  const [time, modifier] = time12h.split(" ");
+  let [hours, minutes] = time.split(":");
+
+  // Convert hours to integer
+  hours = parseInt(hours, 10);
+
+  // Convert "12 AM" → 00
+  if (modifier === "AM" && hours === 12) {
+    hours = 0;
   }
-  
-  if (modifier === 'PM') {
-    hours = parseInt(hours, 10) + 12;
+
+  // Convert PM except 12 PM
+  if (modifier === "PM" && hours !== 12) {
+    hours += 12;
   }
-  
-  return `${hours.padStart(2, '0')}:${minutes}`;
+
+  // Convert back to string before padStart()
+  const hoursStr = hours.toString().padStart(2, "0");
+
+  return `${hoursStr}:${minutes}`;
 };
+
 
   // Helper functions for doctor data transformation
   const getDoctorImage = (specialization) => {
