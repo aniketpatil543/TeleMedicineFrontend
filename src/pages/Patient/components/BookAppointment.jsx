@@ -29,6 +29,12 @@ const BookAppointment = () => {
   const [loading, setLoading] = useState(false);
   const [loadingAvailability, setLoadingAvailability] = useState(false);
   const [error, setError] = useState('');
+  // Update selectedSlot to include availabilityId
+  const [selectedSlot, setSelectedSlot] = useState({ 
+    availabilityId: '', 
+    date: '', 
+    time: '' 
+  });
 
   const userAuthState = useSelector((state) => state.auth);
   const userId = userAuthState.user?.id;
@@ -67,11 +73,11 @@ const BookAppointment = () => {
   }, []);
 
   // Fetch availability when doctor is selected
-useEffect(() => {
-  if (selectedDoctor) {
-    fetchDoctorAvailability(selectedDoctor.id);
-  }
-}, [selectedDoctor]);
+  useEffect(() => {
+    if (selectedDoctor) {
+      fetchDoctorAvailability(selectedDoctor.id);
+    }
+  }, [selectedDoctor]);
 
   const fetchDoctors = async () => {
     try {
@@ -111,86 +117,107 @@ useEffect(() => {
   };
 
   const fetchDoctorAvailability = async (doctorId) => {
-  try {
-    setLoadingAvailability(true);
-    
-    const response = await api.get(`/patients/appointment/${doctorId}/availability`);
-    
-    setAvailability(response.data);
+    try {
+      setLoadingAvailability(true);
+      
+      const response = await api.get(`/patients/appointment/${doctorId}/availability`);
+      
+      // Add unique ID to each availability slot if not present
+      const availabilityWithIds = response.data.map((slot, index) => ({
+        ...slot,
+        availabilityId: slot.id || slot.availabilityId || `slot-${index}-${Date.now()}`
+      }));
+      
+      setAvailability(availabilityWithIds);
+      // Reset selected slot when availability changes
+      setSelectedSlot({ availabilityId: '', date: '', time: '' });
+      setSelectedDate('');
+      setSelectedTime('');
 
-  } catch (err) {
-    console.error('Error fetching availability:', err);
-    setError('Failed to load available time slots.');
-    setAvailability([]);
-  } finally {
-    setLoadingAvailability(false);
-  }
-};
+    } catch (err) {
+      console.error('Error fetching availability:', err);
+      setError('Failed to load available time slots.');
+      setAvailability([]);
+    } finally {
+      setLoadingAvailability(false);
+    }
+  };
 
   const bookAppointment = async () => {
-  try {
-    setLoading(true);
-    
-    if (!selectedDoctor || !selectedDate || !selectedTime) {
-      throw new Error('Please select doctor, date, and time');
+    try {
+      setLoading(true);
+      
+      // Use selectedSlot state
+      if (!selectedDoctor || !selectedSlot.date || !selectedSlot.time) {
+        throw new Error('Please select doctor, date, and time');
+      }
+
+      // Find the selected availability slot
+      const selectedAvailability = availability.find(
+        slot => slot.availabilityId === selectedSlot.availabilityId
+      );
+
+      // Convert time to 24-hour format and create proper LocalDateTime
+      const time24Hour = convertTo24Hour(selectedSlot.time);
+      const scheduledDateTime = `${selectedSlot.date}T${time24Hour}:00`;
+      
+      console.log('Sending appointment data:', {
+        patientId: userId,
+        doctorId: selectedDoctor.id,
+        scheduledTime: scheduledDateTime,
+        reason: appointmentReason || null,
+        availabilityId: selectedSlot.availabilityId
+      });
+
+      const appointmentData = {
+        patientId: userId,
+        doctorId: selectedDoctor.id,
+        scheduledTime: scheduledDateTime,
+        reason: appointmentReason || null
+      };
+
+      // Include availabilityId in the request if needed by backend
+      if (selectedSlot.availabilityId) {
+        appointmentData.availabilityId = selectedSlot.availabilityId;
+      }
+
+      const response = await api.post('/patients/visits/book', appointmentData);
+      
+      console.log('Appointment booked successfully:', response.data);
+      setShowConfirmation(true);
+
+    } catch (err) {
+      console.error('Error booking appointment:', err);
+      console.error('Error details:', err.response?.data);
+      setError(err.response?.data?.message || 'Failed to book appointment. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Helper function to convert 12-hour time to 24-hour format
+  const convertTo24Hour = (time12h) => {
+    const [time, modifier] = time12h.split(" ");
+    let [hours, minutes] = time.split(":");
+
+    // Convert hours to integer
+    hours = parseInt(hours, 10);
+
+    // Convert "12 AM" → 00
+    if (modifier === "AM" && hours === 12) {
+      hours = 0;
     }
 
-    // Convert time to 24-hour format and create proper LocalDateTime
-    const time24Hour = convertTo24Hour(selectedTime);
-    const scheduledDateTime = `${selectedDate}T${time24Hour}:00`;
-    
-    console.log('Sending appointment data:', {
-      patientId: userId,
-      doctorId: selectedDoctor.id,
-      scheduledTime: scheduledDateTime,
-      reason: appointmentReason || null
-    });
+    // Convert PM except 12 PM
+    if (modifier === "PM" && hours !== 12) {
+      hours += 12;
+    }
 
-    const appointmentData = {
-      patientId: userId,
-      doctorId: selectedDoctor.id,
-      scheduledTime: scheduledDateTime,
-      reason: appointmentReason || null
-    };
+    // Convert back to string before padStart()
+    const hoursStr = hours.toString().padStart(2, "0");
 
-    const response = await api.post('/patients/visits/book', appointmentData);
-    
-    console.log('Appointment booked successfully:', response.data);
-    setShowConfirmation(true);
-
-  } catch (err) {
-    console.error('Error booking appointment:', err);
-    console.error('Error details:', err.response?.data);
-    setError(err.response?.data?.message || 'Failed to book appointment. Please try again.');
-  } finally {
-    setLoading(false);
-  }
-};
-
-// Helper function to convert 12-hour time to 24-hour format
-const convertTo24Hour = (time12h) => {
-  const [time, modifier] = time12h.split(" ");
-  let [hours, minutes] = time.split(":");
-
-  // Convert hours to integer
-  hours = parseInt(hours, 10);
-
-  // Convert "12 AM" → 00
-  if (modifier === "AM" && hours === 12) {
-    hours = 0;
-  }
-
-  // Convert PM except 12 PM
-  if (modifier === "PM" && hours !== 12) {
-    hours += 12;
-  }
-
-  // Convert back to string before padStart()
-  const hoursStr = hours.toString().padStart(2, "0");
-
-  return `${hoursStr}:${minutes}`;
-};
-
+    return `${hoursStr}:${minutes}`;
+  };
 
   // Helper functions for doctor data transformation
   const getDoctorImage = (specialization) => {
@@ -230,49 +257,24 @@ const convertTo24Hour = (time12h) => {
   };
 
   // Generate time slots from a single availability slot
-const generateTimeSlotsFromAvailability = (availabilitySlot) => {
-  const slots = [];
-  const start = new Date(`2000-01-01T${availabilitySlot.startTime}`);
-  const end = new Date(`2000-01-01T${availabilitySlot.endTime}`);
-  
-  // Generate 30-minute slots
-  let current = new Date(start);
-  while (current < end) {
-    const timeString = current.toLocaleTimeString('en-US', {
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: true
-    });
-    slots.push(timeString);
-    current.setMinutes(current.getMinutes() + 30);
-  }
-
-  return slots;
-};
-
-  // Generate time slots from availability
-  const generateTimeSlots = () => {
-    if (!availability.length) return [];
-
+  const generateTimeSlotsFromAvailability = (availabilitySlot) => {
     const slots = [];
-    availability.forEach(avail => {
-      const start = new Date(`2000-01-01T${avail.startTime}`);
-      const end = new Date(`2000-01-01T${avail.endTime}`);
-      
-      // Generate 30-minute slots
-      let current = new Date(start);
-      while (current < end) {
-        const timeString = current.toLocaleTimeString('en-US', {
-          hour: '2-digit',
-          minute: '2-digit',
-          hour12: true
-        });
-        slots.push(timeString);
-        current.setMinutes(current.getMinutes() + 30);
-      }
-    });
+    const start = new Date(`2000-01-01T${availabilitySlot.startTime}`);
+    const end = new Date(`2000-01-01T${availabilitySlot.endTime}`);
+    
+    // Generate 30-minute slots
+    let current = new Date(start);
+    while (current < end) {
+      const timeString = current.toLocaleTimeString('en-US', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true
+      });
+      slots.push(timeString);
+      current.setMinutes(current.getMinutes() + 30);
+    }
 
-    return [...new Set(slots)]; // Remove duplicates
+    return slots;
   };
 
   // Mock data fallback
@@ -321,15 +323,11 @@ const generateTimeSlotsFromAvailability = (availabilitySlot) => {
     setSelectedDoctor(null);
     setSelectedDate('');
     setSelectedTime('');
+    setSelectedSlot({ availabilityId: '', date: '', time: '' });
     setAppointmentReason('');
     setShowConfirmation(false);
     setError('');
     setAvailability([]);
-  };
-
-  const handleDateSelect = (date) => {
-    setSelectedDate(date);
-    setSelectedTime(''); // Reset time when date changes
   };
 
   const renderStep1 = () => (
@@ -482,127 +480,147 @@ const generateTimeSlotsFromAvailability = (availabilitySlot) => {
   );
 
   const renderStep2 = () => (
-  <div className="space-y-6">
-    <div className="text-center mb-8">
-      <h2 className="text-3xl font-bold text-[#6D48C5] mb-4">Schedule Your Appointment</h2>
-      <p className="text-[#8B5FBF] text-lg">Choose available time slot for your consultation</p>
-    </div>
+    <div className="space-y-6">
+      <div className="text-center mb-8">
+        <h2 className="text-3xl font-bold text-[#6D48C5] mb-4">Schedule Your Appointment</h2>
+        <p className="text-[#8B5FBF] text-lg">Choose available time slot for your consultation</p>
+      </div>
 
-    {/* Selected Doctor Summary */}
-    <div className="bg-white rounded-2xl p-6 shadow-sm border border-[#E8E0FF]">
-      <div className="flex items-center space-x-4">
-        <img
-          src={selectedDoctor.image}
-          alt={selectedDoctor.name}
-          className="w-16 h-16 rounded-xl object-cover"
-        />
-        <div>
-          <h3 className="font-semibold text-[#6D48C5] text-lg">{selectedDoctor.name}</h3>
-          <p className="text-[#8B5FBF]">{selectedDoctor.specialty}</p>
-          <div className="flex items-center space-x-2 mt-1">
-            <FiStar className="text-yellow-400 fill-current" />
-            <span className="font-medium text-[#6D48C5]">{selectedDoctor.rating}</span>
-            <span className="text-[#8B5FBF] text-sm">• {selectedDoctor.fee}</span>
+      {/* Selected Doctor Summary */}
+      <div className="bg-white rounded-2xl p-6 shadow-sm border border-[#E8E0FF]">
+        <div className="flex items-center space-x-4">
+          <img
+            src={selectedDoctor.image}
+            alt={selectedDoctor.name}
+            className="w-16 h-16 rounded-xl object-cover"
+          />
+          <div>
+            <h3 className="font-semibold text-[#6D48C5] text-lg">{selectedDoctor.name}</h3>
+            <p className="text-[#8B5FBF]">{selectedDoctor.specialty}</p>
+            <div className="flex items-center space-x-2 mt-1">
+              <FiStar className="text-yellow-400 fill-current" />
+              <span className="font-medium text-[#6D48C5]">{selectedDoctor.rating}</span>
+              <span className="text-[#8B5FBF] text-sm">• {selectedDoctor.fee}</span>
+            </div>
           </div>
         </div>
       </div>
-    </div>
 
-    {/* Availability Selection */}
-    <div className="bg-white rounded-2xl p-6 shadow-sm border border-[#E8E0FF]">
-      <h3 className="font-semibold text-[#6D48C5] text-lg mb-4 flex items-center">
-        <FiCalendar className="mr-2" />
-        Available Time Slots
-        {loadingAvailability && (
-          <FiLoader className="ml-2 animate-spin text-[#8B5FBF]" />
-        )}
-      </h3>
-      
-      {loadingAvailability ? (
-        <div className="flex justify-center py-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#6D48C5]"></div>
-        </div>
-      ) : availability.length > 0 ? (
-        <div className="space-y-4">
-          {availability.map((availSlot, index) => (
-            <div key={index} className="border border-[#E8E0FF] rounded-xl p-4">
-              <div className="flex justify-between items-center mb-3">
-                <h4 className="font-semibold text-[#6D48C5]">
-                  {new Date(availSlot.availableDate).toLocaleDateString('en-US', {
-                    weekday: 'long',
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
-                  })}
-                </h4>
-                <span className="text-sm text-[#8B5FBF] bg-[#F4F0FF] px-3 py-1 rounded-full">
-                  {availSlot.startTime} - {availSlot.endTime}
-                </span>
-              </div>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-                {generateTimeSlotsFromAvailability(availSlot).map(time => (
-                  <button
-                    key={time}
-                    onClick={() => {
-                      setSelectedDate(availSlot.availableDate);
-                      setSelectedTime(time);
-                    }}
-                    className={`p-3 rounded-lg border-2 transition-all text-sm ${
-                      selectedDate === availSlot.availableDate && selectedTime === time
-                        ? 'border-[#6D48C5] bg-[#F4F0FF] text-[#6D48C5] font-semibold'
-                        : 'border-[#E8E0FF] text-[#8B5FBF] hover:border-[#8B5FBF]'
-                    }`}
-                  >
-                    {time}
-                  </button>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div className="text-center py-8 text-[#8B5FBF]">
-          No available time slots for this doctor
-        </div>
-      )}
-    </div>
-
-    {/* Appointment Reason */}
-    {selectedTime && (
+      {/* Availability Selection */}
       <div className="bg-white rounded-2xl p-6 shadow-sm border border-[#E8E0FF]">
-        <h3 className="font-semibold text-[#6D48C5] text-lg mb-4">Reason for Visit</h3>
-        <textarea
-          value={appointmentReason}
-          onChange={(e) => setAppointmentReason(e.target.value)}
-          placeholder="Please describe your symptoms or reason for consultation..."
-          rows="4"
-          className="w-full p-3 border border-[#E8E0FF] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#8B5FBF] focus:border-transparent resize-none"
-        />
+        <h3 className="font-semibold text-[#6D48C5] text-lg mb-4 flex items-center">
+          <FiCalendar className="mr-2" />
+          Available Time Slots
+          {loadingAvailability && (
+            <FiLoader className="ml-2 animate-spin text-[#8B5FBF]" />
+          )}
+        </h3>
+        
+        {loadingAvailability ? (
+          <div className="flex justify-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#6D48C5]"></div>
+          </div>
+        ) : availability.length > 0 ? (
+          <div className="space-y-4">
+            {availability.map((availSlot, index) => {
+              const dateStr = availSlot.availableDate;
+              const timeSlots = generateTimeSlotsFromAvailability(availSlot);
+              const availabilityId = availSlot.availabilityId;
+              
+              return (
+                <div key={availabilityId} className="border border-[#E8E0FF] rounded-xl p-4">
+                  <div className="flex justify-between items-center mb-3">
+                    <h4 className="font-semibold text-[#6D48C5]">
+                      {new Date(dateStr).toLocaleDateString('en-US', {
+                        weekday: 'long',
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                      })}
+                    </h4>
+                    <span className="text-sm text-[#8B5FBF] bg-[#F4F0FF] px-3 py-1 rounded-full">
+                      {availSlot.startTime} - {availSlot.endTime}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                    {timeSlots.map(time => {
+                      const slotKey = `${availabilityId}-${dateStr}-${time}`;
+                      const isSelected = selectedSlot.availabilityId === availabilityId && 
+                                        selectedSlot.date === dateStr && 
+                                        selectedSlot.time === time;
+                      
+                      return (
+                        <button
+                          key={slotKey}
+                          onClick={() => {
+                            // Set the complete slot information including availabilityId
+                            setSelectedSlot({ 
+                              availabilityId, 
+                              date: dateStr, 
+                              time 
+                            });
+                            // Also update the old separate states for compatibility
+                            setSelectedDate(dateStr);
+                            setSelectedTime(time);
+                          }}
+                          className={`p-3 rounded-lg border-2 transition-all text-sm ${
+                            isSelected
+                              ? 'border-[#6D48C5] bg-[#F4F0FF] text-[#6D48C5] font-semibold'
+                              : 'border-[#E8E0FF] text-[#8B5FBF] hover:border-[#8B5FBF]'
+                          }`}
+                        >
+                          {time}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="text-center py-8 text-[#8B5FBF]">
+            No available time slots for this doctor
+          </div>
+        )}
       </div>
-    )}
 
-    {/* Navigation Buttons */}
-    <div className="flex justify-between pt-6">
-      <button
-        onClick={() => setActiveStep(1)}
-        className="bg-[#F4F0FF] hover:bg-[#E8E0FF] text-[#6D48C5] px-6 py-3 rounded-xl font-semibold transition-all duration-200 flex items-center space-x-2"
-      >
-        <FiChevronLeft />
-        <span>Back</span>
-      </button>
-      
-      {selectedDate && selectedTime && (
-        <button
-          onClick={() => setActiveStep(3)}
-          className="bg-gradient-to-r from-[#8B5FBF] to-[#6D48C5] hover:from-[#7A4FA8] hover:to-[#5D3AA8] text-white px-8 py-3 rounded-xl font-semibold transition-all duration-200 shadow-sm flex items-center space-x-2"
-        >
-          <span>Review Booking</span>
-          <FiChevronRight />
-        </button>
+      {/* Appointment Reason */}
+      {selectedSlot.time && (
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-[#E8E0FF]">
+          <h3 className="font-semibold text-[#6D48C5] text-lg mb-4">Reason for Visit</h3>
+          <textarea
+            value={appointmentReason}
+            onChange={(e) => setAppointmentReason(e.target.value)}
+            placeholder="Please describe your symptoms or reason for consultation..."
+            rows="4"
+            className="w-full p-3 border border-[#E8E0FF] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#8B5FBF] focus:border-transparent resize-none"
+          />
+        </div>
       )}
+
+      {/* Navigation Buttons */}
+      <div className="flex justify-between pt-6">
+        <button
+          onClick={() => setActiveStep(1)}
+          className="bg-[#F4F0FF] hover:bg-[#E8E0FF] text-[#6D48C5] px-6 py-3 rounded-xl font-semibold transition-all duration-200 flex items-center space-x-2"
+        >
+          <FiChevronLeft />
+          <span>Back</span>
+        </button>
+        
+        {selectedSlot.date && selectedSlot.time && (
+          <button
+            onClick={() => setActiveStep(3)}
+            className="bg-gradient-to-r from-[#8B5FBF] to-[#6D48C5] hover:from-[#7A4FA8] hover:to-[#5D3AA8] text-white px-8 py-3 rounded-xl font-semibold transition-all duration-200 shadow-sm flex items-center space-x-2"
+          >
+            <span>Review Booking</span>
+            <FiChevronRight />
+          </button>
+        )}
+      </div>
     </div>
-  </div>
-);
+  );
 
   const renderStep3 = () => (
     <div className="space-y-6">
@@ -646,7 +664,7 @@ const generateTimeSlotsFromAvailability = (availabilitySlot) => {
               <div>
                 <p className="text-[#8B5FBF] text-sm">Date</p>
                 <p className="font-semibold text-[#6D48C5]">
-                  {new Date(selectedDate).toLocaleDateString('en-US', { 
+                  {new Date(selectedSlot.date).toLocaleDateString('en-US', { 
                     weekday: 'long', 
                     year: 'numeric', 
                     month: 'long', 
@@ -660,7 +678,7 @@ const generateTimeSlotsFromAvailability = (availabilitySlot) => {
               <FiClock className="text-[#8B5FBF]" />
               <div>
                 <p className="text-[#8B5FBF] text-sm">Time</p>
-                <p className="font-semibold text-[#6D48C5]">{selectedTime}</p>
+                <p className="font-semibold text-[#6D48C5]">{selectedSlot.time}</p>
               </div>
             </div>
           </div>
@@ -730,12 +748,12 @@ const generateTimeSlotsFromAvailability = (availabilitySlot) => {
         Your appointment with <span className="font-semibold text-[#6D48C5]">{selectedDoctor.name}</span> has been confirmed.
       </p>
       <p className="text-[#8B5FBF] mb-6">
-        {new Date(selectedDate).toLocaleDateString('en-US', { 
+        {new Date(selectedSlot.date).toLocaleDateString('en-US', { 
           weekday: 'long', 
           year: 'numeric', 
           month: 'long', 
           day: 'numeric' 
-        })} at {selectedTime}
+        })} at {selectedSlot.time}
       </p>
       
       <div className="bg-[#F4F0FF] border border-[#E8E0FF] rounded-2xl p-6 max-w-md mx-auto mb-8">
