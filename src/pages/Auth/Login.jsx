@@ -67,15 +67,39 @@ const handleLogin = async (e) => {
 
     const userData = await response.data;
 
+    console.log('userData',userData)
     // Update Redux store
-    const userAuthData = {
-      emailId : userData.emailId ,
-      user : {
-        id:userData.userId
-      },
-      token: userData.jwtToken,
-      role: userData.roles || userData.role,
-    }
+   // Determine profile (doctor or patient)
+let profile = null;
+
+if (userData.doctorProfile) {
+  profile = {
+    id: userData.doctorProfile.doctorId,
+    firstName: userData.doctorProfile.firstName,
+    lastName: userData.doctorProfile.lastName,
+    phone: userData.doctorProfile.phone,
+    department: userData.doctorProfile.department,
+    specialization: userData.doctorProfile.specialization,
+    experience: userData.doctorProfile.experience
+  };
+} else if (userData.patientProfile) {
+  profile = {
+    id: userData.userId,
+    firstName: userData.patientProfile.name,
+    phone: userData.patientProfile.phone,
+    age: userData.patientProfile.age,
+    gender: userData.patientProfile.gender
+  };
+}
+
+// Now build Redux user object
+const userAuthData = {
+  emailId: userData.emailId,
+  token: userData.jwtToken,
+  role: userData.roles || userData.role,
+  user: profile,  // ⭐ Finally storing doctor or patient data here
+};
+
 
     dispatch(loginSuccess(userAuthData));
     

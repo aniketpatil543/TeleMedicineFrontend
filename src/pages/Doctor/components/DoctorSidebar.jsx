@@ -43,30 +43,30 @@ const DoctorSidebar = ({
       label: 'Patients',
       requiresCompleteProfile: true 
     },
-    { 
-      id: 'medical-records', 
-      icon: FaFileMedical, 
-      label: 'Medical Records',
-      requiresCompleteProfile: true 
-    },
-    { 
-      id: 'prescriptions', 
-      icon: FaPills, 
-      label: 'Prescriptions',
-      requiresCompleteProfile: true 
-    },
-    { 
-      id: 'consultation', 
-      icon: FaVideo, 
-      label: 'Consultation Room',
-      requiresCompleteProfile: true 
-    },
-    { 
-      id: 'notifications', 
-      icon: FaBell, 
-      label: 'Notifications',
-      requiresCompleteProfile: false 
-    },
+    // { 
+    //   id: 'medical-records', 
+    //   icon: FaFileMedical, 
+    //   label: 'Medical Records',
+    //   requiresCompleteProfile: true 
+    // },
+    // { 
+    //   id: 'prescriptions', 
+    //   icon: FaPills, 
+    //   label: 'Prescriptions',
+    //   requiresCompleteProfile: true 
+    // },
+    // { 
+    //   id: 'consultation', 
+    //   icon: FaVideo, 
+    //   label: 'Consultation Room',
+    //   requiresCompleteProfile: true 
+    // },
+    // { 
+    //   id: 'notifications', 
+    //   icon: FaBell, 
+    //   label: 'Notifications',
+    //   requiresCompleteProfile: false 
+    // },
     { 
       id: 'profile', 
       icon: FaUserCircle, 

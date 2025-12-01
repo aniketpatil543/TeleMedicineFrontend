@@ -1,5 +1,3 @@
-// DoctorProfile.jsx
-import axios from 'axios';
 import React, { useState, useEffect } from 'react';
 import { 
   FiUser, 
@@ -10,19 +8,12 @@ import {
   FiMapPin,
   FiCalendar,
   FiAward,
-  FiBook,
-  FiShield,
-  FiBell,
-  FiLock,
   FiAlertTriangle,
-  FiX
+  FiClock,
 } from 'react-icons/fi';
 import { 
   TbStethoscope,
-  TbCertificate,
-  TbLanguage,
   TbBuildingHospital,
-  TbId
 } from 'react-icons/tb';
 import { useSelector } from 'react-redux';
 
@@ -31,9 +22,28 @@ const DoctorProfile = ({ doctorData, onProfileComplete, isProfileComplete }) => 
   const [activeTab, setActiveTab] = useState('profile');
   const [profileProgress, setProfileProgress] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [availabilityLoading, setAvailabilityLoading] = useState(false);
+  const [availabilityError, setAvailabilityError] = useState('');
+  const [availabilitySuccess, setAvailabilitySuccess] = useState('');
+  
   const userAuthState = useSelector(state => state.auth);
 
-  const genderOptions = ['Male', 'Female', 'Other', 'Prefer not to say'];
+  // Get API base URL with fallback
+  const getApiBaseUrl = () => {
+    if (import.meta.env.VITE_DOCTOR_SERVICE_BASE_URL) {
+      return import.meta.env.VITE_DOCTOR_SERVICE_BASE_URL;
+    }
+    console.warn('VITE_DOCTOR_SERVICE_BASE_URL is not set, using default localhost');
+    return 'http://localhost:8084'; // Changed to 8084 based on your logs
+  };
+
+  // Get user data
+  const userData = JSON.parse(localStorage.getItem('userData'));
+  const userId = userData?.userId || userAuthState?.user?.id;
+  const token = userData?.jwtToken || userAuthState?.token;
+
+  // Gender options - UPDATED to match backend enum
+  const genderOptions = ['MALE', 'FEMALE', 'OTHER', 'PREFER_NOT_TO_SAY'];
   
   const departmentOptions = [
     'EMERGENCY',
@@ -59,107 +69,203 @@ const DoctorProfile = ({ doctorData, onProfileComplete, isProfileComplete }) => 
   ];
   
   const [profileData, setProfileData] = useState({
-    // Personal Info Section
-    
+    doctorId: userId || '',
     firstName: '',
     lastName: '',
     email: userAuthState?.emailId || '',
     phone: '',
     gender: '',
     address: '',
-    
-    // Professional Info Section  
     specialization: '',
     department: '',
     experience: '',
-    
-    // Availability Section
-    availability: {
-      workingHours: {
-        monday: { start: '09:00', end: '17:00' },
-        tuesday: { start: '09:00', end: '17:00' },
-        wednesday: { start: '09:00', end: '17:00' },
-        thursday: { start: '09:00', end: '17:00' },
-        friday: { start: '09:00', end: '16:00' },
-        saturday: { start: '09:00', end: '12:00' },
-        sunday: { start: '', end: '' }
-      },
-      appointmentDuration: 30
-    }
   });
+
+  const [availabilityData, setAvailabilityData] = useState({
+    workingHours: {
+      monday: { start: '09:00', end: '17:00', enabled: true },
+      tuesday: { start: '09:00', end: '17:00', enabled: true },
+      wednesday: { start: '09:00', end: '17:00', enabled: true },
+      thursday: { start: '09:00', end: '17:00', enabled: true },
+      friday: { start: '09:00', end: '16:00', enabled: true },
+      saturday: { start: '09:00', end: '12:00', enabled: false },
+      sunday: { start: '', end: '', enabled: false }
+    },
+    appointmentDuration: 30
+  });
+
+  // Helper function to check if profile is complete
+  const checkProfileCompletion = (profileData) => {
+    const requiredFields = [
+      profileData.firstName,
+      profileData.lastName,
+      profileData.emailId || profileData.email,
+      profileData.phone,
+      profileData.gender,
+      profileData.specialization,
+      profileData.department,
+      profileData.experience
+    ];
+
+    return requiredFields.every(field => 
+      field !== undefined && field !== null && field !== ''
+    );
+  };
 
   // Load saved profile data from backend/API
   useEffect(() => {
     fetchProfileData();
-  }, []);
+  }, [userAuthState]);
 
   const fetchProfileData = async () => {
     try {
       setLoading(true);
-      // Replace with your actual API endpoint
-      const response = await fetch('/api/doctor/profile', {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
-          'Content-Type': 'application/json',
-        },
-      });
+      
+      if (!userId) {
+        console.error('User ID not found');
+        throw new Error('User ID not found');
+      }
 
-      if (response.ok) {
-        const data = await response.json();
+      let authToken = token;
+      if (authToken && authToken.startsWith('Bearer ')) {
+        authToken = authToken.split(' ')[1];
+      }
+      
+      if (!authToken) {
+        console.error('Authentication token not found');
+        throw new Error('Authentication required');
+      }
+
+      const apiBaseUrl = getApiBaseUrl();
+
+      // Fetch profile data
+      const profileResponse = await fetch(
+        `${apiBaseUrl}/manage/${userId}`,
+        {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      if (profileResponse.ok) {
+        const data = await profileResponse.json();
+        console.log('Profile data received:', data);
+        
         setProfileData({
-          doctorId: data.doctorId || '',
+          doctorId: data.doctorId || userId,
           firstName: data.firstName || '',
           lastName: data.lastName || '',
-          email: data.email || '',
+          email: data.emailId || userAuthState?.emailId || '',
           phone: data.phone || '',
           gender: data.gender || '',
           address: data.address || '',
           specialization: data.specialization || '',
           department: data.department || '',
           experience: data.experience || '',
-          availability: data.availability || {
-            workingHours: {
-              monday: { start: '09:00', end: '17:00' },
-              tuesday: { start: '09:00', end: '17:00' },
-              wednesday: { start: '09:00', end: '17:00' },
-              thursday: { start: '09:00', end: '17:00' },
-              friday: { start: '09:00', end: '16:00' },
-              saturday: { start: '09:00', end: '12:00' },
-              sunday: { start: '', end: '' }
-            },
-            appointmentDuration: 30
-          }
         });
-      } else {
-        console.error('Failed to fetch profile data');
-        // Fallback to localStorage if API fails
-        const savedProfile = localStorage.getItem('doctorProfile');
-        if (savedProfile) {
-          try {
-            const parsedProfile = JSON.parse(savedProfile);
-            setProfileData(parsedProfile);
-          } catch (error) {
-            console.error('Error loading saved profile:', error);
-          }
+
+        // Fetch availability separately
+        await fetchAvailability(authToken, apiBaseUrl);
+
+        const isComplete = checkProfileCompletion(data);
+        if (onProfileComplete) {
+          onProfileComplete(isComplete ? data : false);
         }
+
+      } else if (profileResponse.status === 404) {
+        console.log('No existing profile found - starting with empty form');
+        setProfileData(prev => ({
+          ...prev,
+          email: userAuthState?.emailId || ''
+        }));
+        
+        if (onProfileComplete) {
+          onProfileComplete(false);
+        }
+      } else {
+        const errorText = await profileResponse.text();
+        throw new Error(`Failed to fetch profile: ${profileResponse.status} - ${errorText}`);
       }
+
     } catch (error) {
       console.error('Error fetching profile:', error);
-      // Fallback to localStorage if API fails
+      
       const savedProfile = localStorage.getItem('doctorProfile');
       if (savedProfile) {
         try {
           const parsedProfile = JSON.parse(savedProfile);
           setProfileData(parsedProfile);
-        } catch (error) {
-          console.error('Error loading saved profile:', error);
+          console.log('Loaded profile from localStorage fallback');
+        } catch (parseError) {
+          console.error('Error loading saved profile from localStorage:', parseError);
         }
+      }
+      
+      if (onProfileComplete) {
+        onProfileComplete(false);
       }
     } finally {
       setLoading(false);
     }
   };
+
+ const fetchAvailability = async (authToken, apiBaseUrl) => {
+  try {
+    const response = await fetch(
+      `${apiBaseUrl}/availability/${userId}`,
+      {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${authToken}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+
+    if (response.ok) {
+      const availabilityArray = await response.json();
+      console.log('Availability data received:', availabilityArray);
+      
+      // Transform backend array data to frontend format
+      // Assuming the array order is: Monday, Tuesday, Wednesday, Thursday, Friday, Saturday, Sunday
+      const daysOfWeek = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+      
+      const transformedWorkingHours = {};
+      
+      availabilityArray.forEach((slot, index) => {
+        if (index < daysOfWeek.length) {
+          const dayKey = daysOfWeek[index];
+          
+          // Extract time from "09:00:00" format to "09:00"
+          const startTime = slot.startTime ? slot.startTime.substring(0, 5) : '';
+          const endTime = slot.endTime ? slot.endTime.substring(0, 5) : '';
+          
+          transformedWorkingHours[dayKey] = {
+            start: startTime,
+            end: endTime,
+            enabled: !!(startTime && endTime) // Enable if both times exist
+          };
+        }
+      });
+      
+      console.log('Transformed working hours:', transformedWorkingHours);
+      
+      // Update the availability data state
+      setAvailabilityData(prev => ({
+        ...prev,
+        workingHours: transformedWorkingHours
+      }));
+      
+    } else if (response.status !== 404) {
+      console.error('Failed to fetch availability:', response.status);
+    }
+  } catch (error) {
+    console.error('Error fetching availability:', error);
+  }
+};
 
   // Calculate profile completion percentage
   useEffect(() => {
@@ -168,7 +274,6 @@ const DoctorProfile = ({ doctorData, onProfileComplete, isProfileComplete }) => 
 
   const calculateProgress = () => {
     const requiredFields = [
-      
       profileData.firstName,
       profileData.lastName,
       profileData.email,
@@ -187,79 +292,170 @@ const DoctorProfile = ({ doctorData, onProfileComplete, isProfileComplete }) => 
     setProfileProgress(progress);
   };
 
-  const handleSave = async () => {
+  const handleSaveProfile = async () => {
     try {
       setLoading(true);
       
-      // Save to backend API
-  const response = await axios.post(
-  `${import.meta.env.VITE_DOCTOR_SERVICE_BASE_URL}/manage/create`,
-  {
-    doctorId: userAuthState?.user?.id,
-    firstName: profileData.firstName,
-    lastName: profileData.lastName,
-    emailId: profileData.email,
-    phone: profileData.phone,
-    gender: profileData.gender,
-    address: profileData.address,
-
-    // Professional Info
-    specialization: profileData.specialization,
-    department: profileData.department,
-    experience: profileData.experience,
-  },
-  {
-    headers: {
-      Authorization: `${userAuthState?.token}`,
-      "Content-Type": "application/json",
-    },
-  }
-);
-
-const res = await response.data ;
-console.log("Response From Api ==> ");
-
-console.log(  res);
-
-
-      if (response.ok) {
-        // Also save to localStorage as backup
-        localStorage.setItem('doctorProfile', JSON.stringify(profileData));
-        
-        // Check if profile is complete enough and trigger completion
-        if (profileProgress === 100 && !isProfileComplete && onProfileComplete) {
-          onProfileComplete(profileData);
-        }
-        
-        setIsEditing(false);
-      } else {
-        console.error('Failed to update profile');
-        // Fallback to localStorage if API fails
-        localStorage.setItem('doctorProfile', JSON.stringify(profileData));
-        
-        if (profileProgress === 100 && !isProfileComplete && onProfileComplete) {
-          onProfileComplete(profileData);
-        }
-        
-        setIsEditing(false);
+      if (!token || !userId) {
+        alert('Authentication required. Please log in again.');
+        return;
       }
-    } catch (error) {
-      console.error('Error updating profile:', error);
-      // Fallback to localStorage if API fails
+
+      let authToken = token;
+      if (authToken && authToken.startsWith('Bearer ')) {
+        authToken = authToken.split(' ')[1];
+      }
+
+      const apiBaseUrl = getApiBaseUrl();
+      
+      // Save basic doctor profile
+      const profileResponse = await fetch(
+        `${apiBaseUrl}/manage/create`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            doctorId: userId,
+            firstName: profileData.firstName,
+            lastName: profileData.lastName,
+            emailId: profileData.email,
+            phone: profileData.phone,
+            gender: profileData.gender,
+            address: profileData.address,
+            specialization: profileData.specialization,
+            department: profileData.department,
+            experience: parseInt(profileData.experience) || 0,
+          }),
+        }
+      );
+
+      if (!profileResponse.ok) {
+        const errorText = await profileResponse.text();
+        throw new Error(`Failed to update profile: ${profileResponse.status} - ${errorText}`);
+      }
+
+      const updatedDoctor = await profileResponse.json();
+      console.log('Profile updated successfully:', updatedDoctor);
+      
       localStorage.setItem('doctorProfile', JSON.stringify(profileData));
       
-      if (profileProgress === 100 && !isProfileComplete && onProfileComplete) {
+      const isComplete = checkProfileCompletion({
+        ...profileData,
+        emailId: profileData.email
+      });
+      
+      if (isComplete && onProfileComplete) {
         onProfileComplete(profileData);
       }
       
       setIsEditing(false);
+      alert('Profile saved successfully!');
+
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      alert(`Failed to update profile: ${error.message}. Please try again.`);
     } finally {
       setLoading(false);
     }
   };
 
+  const handleSaveAvailability = async () => {
+    try {
+      setAvailabilityLoading(true);
+      setAvailabilityError('');
+      setAvailabilitySuccess('');
+      
+      if (!token || !userId) {
+        alert('Authentication required. Please log in again.');
+        return;
+      }
+
+      let authToken = token;
+      if (authToken && authToken.startsWith('Bearer ')) {
+        authToken = authToken.split(' ')[1];
+      }
+
+      const apiBaseUrl = getApiBaseUrl();
+
+      // Clear existing availability first
+      try {
+        const existingAvailability = await fetch(
+          `${apiBaseUrl}/availability/${userId}`,
+          {
+            method: 'GET',
+            headers: {
+              'Authorization': `Bearer ${authToken}`,
+              'Content-Type': 'application/json',
+            },
+          }
+        );
+
+        if (existingAvailability.ok) {
+          const slots = await existingAvailability.json();
+          for (const slot of slots) {
+            await fetch(
+              `${apiBaseUrl}/availability/${userId}/slot/${slot.id}`,
+              {
+                method: 'DELETE',
+                headers: {
+                  'Authorization': `Bearer ${authToken}`,
+                },
+              }
+            );
+          }
+        }
+      } catch (error) {
+        console.warn('Could not clear existing availability:', error);
+      }
+
+      // Save new availability for enabled days
+      let savedCount = 0;
+      for (const [day, schedule] of Object.entries(availabilityData.workingHours)) {
+        if (schedule.enabled && schedule.start && schedule.end) {
+          const availabilityDTO = {
+            doctorId: parseInt(userId),
+            availableDate: new Date().toISOString().split('T')[0], // Today's date
+            startTime: schedule.start + ':00', // Add seconds
+            endTime: schedule.end + ':00', // Add seconds
+          };
+
+          const response = await fetch(
+            `${apiBaseUrl}/availability`,
+            {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${authToken}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify(availabilityDTO),
+            }
+          );
+          
+          if (response.ok) {
+            savedCount++;
+          } else {
+            console.warn(`Failed to save availability for ${day}:`, response.status);
+          }
+        }
+      }
+
+      setAvailabilitySuccess(`Successfully saved ${savedCount} availability slots!`);
+      setTimeout(() => setAvailabilitySuccess(''), 3000);
+
+    } catch (error) {
+      console.error('Error saving availability:', error);
+      setAvailabilityError(`Failed to save availability: ${error.message}`);
+      setTimeout(() => setAvailabilityError(''), 5000);
+    } finally {
+      setAvailabilityLoading(false);
+    }
+  };
+
   const handleCancel = () => {
-    fetchProfileData(); // Reload data from backend
+    fetchProfileData();
     setIsEditing(false);
   };
 
@@ -270,27 +466,36 @@ console.log(  res);
     }));
   };
 
-  const updateAvailabilityField = (field, value) => {
-    setProfileData(prev => ({
+  const updateAvailabilityData = (field, value) => {
+    setAvailabilityData(prev => ({
       ...prev,
-      availability: {
-        ...prev.availability,
-        [field]: value
-      }
+      [field]: value
     }));
   };
 
   const updateWorkingHours = (day, field, value) => {
-    setProfileData(prev => ({
+    setAvailabilityData(prev => ({
       ...prev,
-      availability: {
-        ...prev.availability,
-        workingHours: {
-          ...prev.availability.workingHours,
-          [day]: {
-            ...prev.availability.workingHours[day],
-            [field]: value
-          }
+      workingHours: {
+        ...prev.workingHours,
+        [day]: {
+          ...prev.workingHours[day],
+          [field]: value
+        }
+      }
+    }));
+  };
+
+  const toggleDayEnabled = (day) => {
+    setAvailabilityData(prev => ({
+      ...prev,
+      workingHours: {
+        ...prev.workingHours,
+        [day]: {
+          ...prev.workingHours[day],
+          enabled: !prev.workingHours[day].enabled,
+          start: !prev.workingHours[day].enabled ? '09:00' : '',
+          end: !prev.workingHours[day].enabled ? '17:00' : ''
         }
       }
     }));
@@ -309,7 +514,19 @@ console.log(  res);
       case 'professional':
         return <ProfessionalInfoTab data={profileData} isEditing={isEditing} onChange={updateField} departmentOptions={departmentOptions} specializationOptions={specializationOptions} />;
       case 'availability':
-        return <AvailabilityTab data={profileData.availability} isEditing={isEditing} onChange={updateAvailabilityField} onWorkingHoursChange={updateWorkingHours} />;
+        return (
+          <AvailabilityTab 
+            data={availabilityData} 
+            isEditing={isEditing} 
+            onChange={updateAvailabilityData} 
+            onWorkingHoursChange={updateWorkingHours}
+            onToggleDay={toggleDayEnabled}
+            onSaveAvailability={handleSaveAvailability}
+            loading={availabilityLoading}
+            error={availabilityError}
+            success={availabilitySuccess}
+          />
+        );
       default:
         return <PersonalInfoTab data={profileData} isEditing={isEditing} onChange={updateField} genderOptions={genderOptions} />;
     }
@@ -344,7 +561,6 @@ console.log(  res);
           </div>
         </div>
         
-        {/* Progress Bar for Incomplete Profiles */}
         {!isProfileComplete && (
           <div className="w-full lg:w-64">
             <div className="flex justify-between text-sm text-gray-600 mb-2">
@@ -371,7 +587,7 @@ console.log(  res);
                 Cancel
               </button>
               <button
-                onClick={handleSave}
+                onClick={handleSaveProfile}
                 disabled={loading || !isEditing}
                 className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
               >
@@ -380,7 +596,7 @@ console.log(  res);
                 ) : (
                   <FiSave className="text-lg" />
                 )}
-                {!isProfileComplete ? 'Complete Profile' : 'Save Changes'}
+                {!isProfileComplete ? 'Complete Profile' : 'Save Profile'}
               </button>
             </>
           ) : (
@@ -395,7 +611,6 @@ console.log(  res);
         </div>
       </div>
 
-      {/* Warning Banner for Incomplete Profile */}
       {!isProfileComplete && (
         <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
           <div className="flex items-center gap-3">
@@ -437,7 +652,7 @@ console.log(  res);
               <div className="flex items-center justify-between p-3 bg-blue-50 rounded-xl">
                 <span className="text-sm text-blue-700">Doctor ID</span>
                 <span className="text-sm font-medium text-blue-900">
-                  {profileData.doctorId || 'Not set'}
+                  {profileData.doctorId || userId || 'Not set'}
                 </span>
               </div>
               <div className="flex items-center justify-between p-3 bg-green-50 rounded-xl">
@@ -493,7 +708,6 @@ console.log(  res);
 // Personal Info Tab Component
 const PersonalInfoTab = ({ data, isEditing, onChange, genderOptions }) => {
   const personalFields = [
-    // { key: 'doctorId', label: 'Doctor ID', icon: <TbId className="text-blue-500" />, type: 'text', required: false },
     { key: 'firstName', label: 'First Name', icon: <FiUser className="text-blue-500" />, type: 'text', required: true },
     { key: 'lastName', label: 'Last Name', icon: <FiUser className="text-blue-500" />, type: 'text', required: true },
     { key: 'email', label: 'Email Address', icon: <FiMail className="text-blue-500" />, type: 'email', required: true },
@@ -521,7 +735,12 @@ const PersonalInfoTab = ({ data, isEditing, onChange, genderOptions }) => {
                 >
                   <option value="">Select {field.label}</option>
                   {field.options.map(option => (
-                    <option key={option} value={option}>{option}</option>
+                    <option key={option} value={option}>
+                      {option === 'MALE' ? 'Male' : 
+                       option === 'FEMALE' ? 'Female' : 
+                       option === 'OTHER' ? 'Other' : 
+                       'Prefer not to say'}
+                    </option>
                   ))}
                 </select>
               ) : (
@@ -618,8 +837,18 @@ const ProfessionalInfoTab = ({ data, isEditing, onChange, departmentOptions, spe
   );
 };
 
-// Availability Tab Component
-const AvailabilityTab = ({ data, isEditing, onChange, onWorkingHoursChange }) => {
+// Availability Tab Component - FIXED
+const AvailabilityTab = ({ 
+  data, 
+  isEditing, 
+  onChange, 
+  onWorkingHoursChange, 
+  onToggleDay,
+  onSaveAvailability,
+  loading,
+  error,
+  success
+}) => {
   const days = [
     { key: 'monday', label: 'Monday' },
     { key: 'tuesday', label: 'Tuesday' },
@@ -632,6 +861,30 @@ const AvailabilityTab = ({ data, isEditing, onChange, onWorkingHoursChange }) =>
 
   return (
     <div className="space-y-6">
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-xl p-4">
+          <div className="flex items-center gap-3">
+            <FiAlertTriangle className="text-red-600 text-xl" />
+            <div>
+              <h4 className="font-semibold text-red-800">Error</h4>
+              <p className="text-red-700 text-sm">{error}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {success && (
+        <div className="bg-green-50 border border-green-200 rounded-xl p-4">
+          <div className="flex items-center gap-3">
+            <FiClock className="text-green-600 text-xl" />
+            <div>
+              <h4 className="font-semibold text-green-800">Success</h4>
+              <p className="text-green-700 text-sm">{success}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
@@ -659,37 +912,87 @@ const AvailabilityTab = ({ data, isEditing, onChange, onWorkingHoursChange }) =>
 
       {/* Working Hours */}
       <div>
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Working Hours</h3>
-        <div className="space-y-3">
-          {days.map((day) => (
-            <div key={day.key} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-200">
-              <span className="font-medium text-gray-900 capitalize">{day.label}</span>
-              {isEditing ? (
-                <div className="flex items-center gap-2">
-                  <input
-                    type="time"
-                    value={data.workingHours[day.key]?.start || ''}
-                    onChange={(e) => onWorkingHoursChange(day.key, 'start', e.target.value)}
-                    className="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                  <span className="text-gray-500">to</span>
-                  <input
-                    type="time"
-                    value={data.workingHours[day.key]?.end || ''}
-                    onChange={(e) => onWorkingHoursChange(day.key, 'end', e.target.value)}
-                    className="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </div>
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-lg font-semibold text-gray-900">Working Hours</h3>
+          {isEditing && (
+            <button
+              onClick={onSaveAvailability}
+              disabled={loading}
+              className="flex items-center gap-2 px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loading ? (
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
               ) : (
-                <span className="text-gray-600">
-                  {data.workingHours[day.key]?.start && data.workingHours[day.key]?.end 
-                    ? `${data.workingHours[day.key].start} - ${data.workingHours[day.key].end}`
-                    : 'Not available'
-                  }
-                </span>
+                <FiSave className="text-lg" />
               )}
-            </div>
-          ))}
+              Save Availability
+            </button>
+          )}
+        </div>
+        <p className="text-gray-600 text-sm mb-4">
+          Set your regular working hours. Patients will be able to book appointments during these times.
+        </p>
+        <div className="space-y-3">
+          {days.map((day) => {
+            const dayData = data.workingHours[day.key];
+            const hasSchedule = dayData?.start && dayData?.end && dayData.start !== '' && dayData.end !== '';
+            const isEnabled = dayData?.enabled !== false; // Default to true if not specified
+            
+            return (
+              <div key={day.key} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-200">
+                <div className="flex items-center gap-3">
+                  {isEditing ? (
+                    <button
+                      type="button"
+                      onClick={() => onToggleDay(day.key)}
+                      className={`w-4 h-4 rounded border flex items-center justify-center ${isEnabled ? 'bg-blue-600 border-blue-600' : 'bg-white border-gray-300'}`}
+                    >
+                      {isEnabled && (
+                        <svg className="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" />
+                        </svg>
+                      )}
+                    </button>
+                  ) : (
+                    <div className={`w-3 h-3 rounded-full ${hasSchedule ? 'bg-green-500' : 'bg-gray-300'}`}></div>
+                  )}
+                  <span className="font-medium text-gray-900 capitalize">{day.label}</span>
+                </div>
+                
+                {isEditing ? (
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="time"
+                      value={dayData?.start || ''}
+                      onChange={(e) => onWorkingHoursChange(day.key, 'start', e.target.value)}
+                      disabled={!isEnabled}
+                      className={`border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${!isEnabled ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : ''}`}
+                    />
+                    <span className="text-gray-500">to</span>
+                    <input
+                      type="time"
+                      value={dayData?.end || ''}
+                      onChange={(e) => onWorkingHoursChange(day.key, 'end', e.target.value)}
+                      disabled={!isEnabled}
+                      className={`border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${!isEnabled ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : ''}`}
+                    />
+                  </div>
+                ) : (
+                  <span className="text-gray-600">
+                    {hasSchedule 
+                      ? `${dayData.start} - ${dayData.end}`
+                      : 'Not available'
+                    }
+                  </span>
+                )}
+              </div>
+            );
+          })}
+        </div>
+        
+        <div className="mt-6 p-4 bg-blue-50 rounded-xl border border-blue-200 text-sm text-blue-700">
+          <p className="font-medium">Note:</p>
+          <p>Availability is saved separately from your profile. Click "Save Availability" button to save your working hours.</p>
         </div>
       </div>
     </div>

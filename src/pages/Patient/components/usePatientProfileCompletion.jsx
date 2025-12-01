@@ -1,4 +1,3 @@
-// hooks/usePatientProfileCompletion.js
 import { useState, useEffect } from 'react';
 
 export const usePatientProfileCompletion = () => {
@@ -10,7 +9,7 @@ export const usePatientProfileCompletion = () => {
   }, []);
 
   const checkProfileCompletion = () => {
-    const profileData = localStorage.getItem('patientProfile');
+    const profileData = localStorage.getItem('userData').patientProfile;
     
     if (!profileData) {
       setIsProfileComplete(false);

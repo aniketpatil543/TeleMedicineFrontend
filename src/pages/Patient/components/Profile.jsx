@@ -83,7 +83,7 @@ const Profile = ({ userData, onProfileComplete, isProfileComplete }) => {
           credentials: 'include',
         }
       );
-
+    console.log('response profile patient',response)
       if (response.ok) {
         const data = await response.json();
         console.log('Profile data received:', data);
@@ -208,7 +208,7 @@ const Profile = ({ userData, onProfileComplete, isProfileComplete }) => {
       console.log("Updating profile for userId:", userId);
 
       const response = await fetch(
-        `${import.meta.env.VITE_DOCTOR_SERVICE_BASE_URL}/${userId}`,
+        `${import.meta.env.VITE_PATIENT_SERVICE_BASE_URL}/${userId}`,
         {
           method: "PUT",
           headers: {
@@ -271,17 +271,24 @@ const Profile = ({ userData, onProfileComplete, isProfileComplete }) => {
     setIsEditing(false);
   };
 
-  const inputFields = [
-    { key: 'firstName', label: 'First Name', icon: <FiUser className="text-purple-500" />, type: 'text', required: true },
-    { key: 'lastName', label: 'Last Name', icon: <FiUser className="text-purple-500" />, type: 'text', required: true },
-    { key: 'gender', label: 'Patient Gender', icon: <FiUser className="text-purple-500" />, type: 'text', required: true },
-    { key: 'email', label: 'Email Address', icon: <FiMail className="text-purple-500" />, type: 'email', required: true },
-    { key: 'phone', label: 'Phone Number', icon: <FiPhone className="text-purple-500" />, type: 'tel', required: true },
-    { key: 'bloodType', label: 'Blood Group', icon: <MdBloodtype className='text-purple-500'/>, type: 'select', required: true },
-    { key: 'age', label: 'Age', icon: <FiCalendar className="text-purple-500" />, type: 'number', required: true },
-    { key: 'weight', label: 'Weight (kg)', icon: <FaWeight className='text-purple-500' />, type: 'number', required: true },
-    { key: 'address', label: 'Address', icon: <FiMapPin className="text-purple-500" />, type: 'text', required: true }
-  ];
+const inputFields = [
+  { key: 'firstName', label: 'First Name', icon: <FiUser className="text-purple-500" />, type: 'text', required: true },
+  { key: 'lastName', label: 'Last Name', icon: <FiUser className="text-purple-500" />, type: 'text', required: true },
+
+  // GENDER → the correct type is select
+  { key: 'gender', label: 'Patient Gender', icon: <FiUser className="text-purple-500" />, type: 'select', required: true, options: genderOptions },
+
+  { key: 'email', label: 'Email Address', icon: <FiMail className="text-purple-500" />, type: 'email', required: true },
+  { key: 'phone', label: 'Phone Number', icon: <FiPhone className="text-purple-500" />, type: 'tel', required: true },
+
+  // BLOOD GROUP (select needs options)
+  { key: 'bloodType', label: 'Blood Group', icon: <MdBloodtype className='text-purple-500'/>, type: 'select', required: true, options: bloodGroups },
+
+  { key: 'age', label: 'Age', icon: <FiCalendar className="text-purple-500" />, type: 'number', required: true },
+  { key: 'weight', label: 'Weight (kg)', icon: <FaWeight className='text-purple-500' />, type: 'number', required: true },
+  { key: 'address', label: 'Address', icon: <FiMapPin className="text-purple-500" />, type: 'text', required: true }
+];
+
 
   if (loading) {
     return (

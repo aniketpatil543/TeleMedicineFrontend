@@ -1,4 +1,3 @@
-// Dashboard.jsx
 import React, { useState, useEffect } from 'react';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
@@ -30,92 +29,17 @@ const Dashboard = () => {
   useEffect(() => {
     // Load saved profile data first
     const savedProfile = localStorage.getItem('userData');
-    if (savedProfile) {
+    const profile=savedProfile.patientProfile;
+    if (profile) {
       try {
-        const parsedProfile = JSON.parse(savedProfile);
+        const parsedProfile = JSON.parse(profile);
         setUserData(parsedProfile);
       } catch (error) {
         console.error('Error loading saved profile:', error);
       }
     }
 
-    // Mock data - replace with actual API calls
-    const mockUserData = {
-      name: 'John Doe',
-      email: 'john.doe@example.com',
-      age: 45,
-      bloodType: 'O+',
-      lastCheckup: '2024-01-15',
-      phone: '+1 (555) 123-4567',
-      memberSince: '2023-06-15',
-      upcomingAppointments: [
-        {
-          id: 1,
-          doctor: 'Dr. Sarah Wilson',
-          specialization: 'Cardiologist',
-          date: '2024-01-20',
-          time: '10:00 AM',
-          type: 'Video Consultation',
-          status: 'confirmed'
-        },
-        {
-          id: 2,
-          doctor: 'Dr. Michael Chen',
-          specialization: 'Dermatologist',
-          date: '2024-01-25',
-          time: '2:30 PM',
-          type: 'In-Person',
-          status: 'confirmed'
-        }
-      ],
-      recentPrescriptions: [
-        {
-          id: 1,
-          medication: 'Atorvastatin',
-          dosage: '20mg',
-          frequency: 'Once daily',
-          prescribedBy: 'Dr. Sarah Wilson',
-          date: '2024-01-15'
-        }
-      ],
-      medicalAlerts: [
-        'Annual physical due in 2 months',
-        'Prescription refill available'
-      ]
-    };
-    
-    const mockNotifications = [
-      {
-        id: 1,
-        type: 'appointment',
-        message: 'Upcoming appointment with Dr. Smith tomorrow at 2:00 PM',
-        time: '2 hours ago',
-        read: false,
-        priority: 'high'
-      },
-      {
-        id: 2,
-        type: 'prescription',
-        message: 'New prescription for Amoxicillin added',
-        time: '1 day ago',
-        read: true,
-        priority: 'medium'
-      },
-      {
-        id: 3,
-        type: 'test',
-        message: 'Lab test results are now available',
-        time: '3 days ago',
-        read: true,
-        priority: 'medium'
-      }
-    ];
 
-    // Only set mock data if no saved profile exists
-    if (!savedProfile) {
-      setUserData(mockUserData);
-    }
-    setNotifications(mockNotifications);
   }, []);
 
   // Redirect to profile if not complete

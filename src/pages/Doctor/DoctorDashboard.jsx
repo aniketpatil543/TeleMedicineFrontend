@@ -120,11 +120,11 @@ const DoctorDashboard = () => {
   // Handle profile completion
   const handleProfileComplete = (profileData) => {
     markProfileAsComplete(profileData);
-    toast.success('Profile completed successfully!', {
-      duration: 3000,
-      position: 'top-right'
-    });
-    setActiveSection('overview');
+    // toast.success('Profile completed successfully!', {
+    //   duration: 3000,
+    //   position: 'top-right'
+    // });
+    // setActiveSection('overview');
   };
 
   const renderSection = () => {
