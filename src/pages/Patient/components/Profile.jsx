@@ -1,17 +1,20 @@
 // Profile.jsx
 import React, { useState, useEffect } from 'react';
-import { FiUser, FiMail, FiPhone, FiCalendar, FiEdit, FiSave, FiX, FiMapPin } from 'react-icons/fi';
+import { FiUser, FiMail, FiPhone, FiCalendar, FiEdit, FiSave, FiMapPin } from 'react-icons/fi';
 import { FaWeight } from "react-icons/fa";
 import { MdBloodtype } from "react-icons/md";
-import { useSelector,useDispatch } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { loginSuccess } from '../../../store/slices/authSlice';
 
 const Profile = ({ userData, onProfileComplete, isProfileComplete }) => {
   const [isEditing, setIsEditing] = useState(!isProfileComplete);
   const [profileProgress, setProfileProgress] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [profileExists, setProfileExists] = useState(false);
+  
   const userAuthState = useSelector((state) => state.auth);
-  // userAuthState.user.id
   
   const [formData, setFormData] = useState({
     firstName: '',
@@ -52,117 +55,155 @@ const Profile = ({ userData, onProfileComplete, isProfileComplete }) => {
     );
   };
 
-  const dispatch=useDispatch();
+  // Helper function to check if profile exists in DB (based on firstName and lastName being null/empty)
+  const checkIfProfileExists = (profileData) => {
+    // If both firstName and lastName are null/empty, profile doesn't exist yet
+    return !(!profileData.firstName && !profileData.lastName);
+  };
 
-  const fetchProfileData = async () => {
-    try {
-      setLoading(true);
-      
-      // Get user data from localStorage
-      const userData = JSON.parse(localStorage.getItem('userData'));
-      const token = userData?.jwtToken?.split(' ')[1]; 
-      const userId = userData?.userId;
+  const dispatch = useDispatch();
 
-      if (!userId || !token) {
-        console.error('User ID or token not found');
-        throw new Error('Authentication required');
+const fetchProfileData = async () => {
+  try {
+    setLoading(true);
+    setError('');
+    
+    // Get user data from localStorage
+    const userData = JSON.parse(localStorage.getItem('userData'));
+    const token = userData?.jwtToken?.split(' ')[1]; 
+    const userId = userData?.userId;
+
+    if (!userId || !token) {
+      console.error('User ID or token not found');
+      throw new Error('Authentication required');
+    }
+
+    console.log("Fetching profile for userId:", userId);
+
+    // Use the check endpoint first
+    const response = await fetch(
+      `${import.meta.env.VITE_PATIENT_SERVICE_BASE_URL}/check/${userId}`,
+      {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
       }
+    );
 
-      console.log("Fetching profile for userId:", userId);
-      console.log("Using token:", token);
+    if (response.ok) {
+      let data;
+      const responseText = await response.text();
+      
+      try {
+        // Try to parse as JSON
+        data = JSON.parse(responseText);
+      } catch (e) {
+        // If not JSON, handle as error or empty data
+        console.log('Response is not JSON:', responseText);
+        data = {};
+      }
+      
+      console.log('Profile data received:', data);
+      
+      // Check if profile actually exists in DB (not just empty response)
+      const exists = checkIfProfileExists(data);
+      setProfileExists(exists);
+      
+      // Map the backend DTO to your frontend formData structure
+      setFormData({
+        firstName: data.firstName || '',
+        lastName: data.lastName || '',
+        email: data.emailId || userAuthState.emailId || '',
+        phone: data.phone || '',
+        age: data.age || '',
+        weight: data.weight || '',
+        bloodType: data.bloodGroup || '',
+        address: data.address || '',
+        gender: data.gender || ''
+      });
 
-      // Call your patient service API
-      const response = await fetch(
-        `${import.meta.env.VITE_PATIENT_SERVICE_BASE_URL}/${userId}`,
-        {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-          credentials: 'include',
-        }
-      );
-    console.log('response profile patient',response)
-      if (response.ok) {
-        const data = await response.json();
-        console.log('Profile data received:', data);
-        
-        // Map the backend DTO to your frontend formData structure
-        setFormData({
-          firstName: data.firstName || '',
-          lastName: data.lastName || '',
-          email: data.emailId || '', // Note: backend uses emailId, frontend uses email
-          phone: data.phone || '',
-          age: data.age || '',
-          weight: data.weight || '',
-          bloodType: data.bloodGroup || '', // Note: backend uses bloodGroup, frontend uses bloodType
-          address: data.address || '',
-          gender: data.gender || ''
-        });
-
+      // Update auth state if profile exists
+      if (exists) {
         dispatch(loginSuccess({
-          emailId:data.emailId,
-          user:{
-            age:data.age,
-            phone:data.phone,
-            firstName:data.firstName,
-            id:data.patientId,
+          emailId: data.emailId,
+          user: {
+            age: data.age,
+            phone: data.phone,
+            firstName: data.firstName,
+            id: data.patientId,
             bloodType: data.bloodGroup
           },
-          role:"PATIENT",
-          token:token
-        }))
-
-        // Check if profile is complete and notify parent component
-        const isComplete = checkProfileCompletion(data);
-        if (onProfileComplete) {
-          onProfileComplete(isComplete);
-        }
-
-      } else if (response.status === 404) {
-        // Patient profile doesn't exist yet - this is normal for new users
-        console.log('No existing profile found - starting with empty form');
-        // Keep the default empty form data
-        if (onProfileComplete) {
-          onProfileComplete(false);
-        }
-      } else {
-        console.error('Failed to fetch profile data:', response.status, response.statusText);
-        throw new Error(`Failed to fetch profile: ${response.status}`);
+          role: "PATIENT",
+          token: token
+        }));
       }
 
-    } catch (error) {
-      console.error('Error fetching profile:', error);
+      // Check if profile is complete and notify parent component
+      const isComplete = checkProfileCompletion(data);
+      if (onProfileComplete) {
+        onProfileComplete(isComplete);
+      }
+
+    } else {
+      const errorText = await response.text();
+      console.error('Failed to fetch profile data:', response.status, errorText);
       
-      // Fallback to localStorage if API fails
-      const savedProfile = localStorage.getItem('patientProfile');
-      if (savedProfile) {
-        try {
-          const parsedProfile = JSON.parse(savedProfile);
-          setFormData(parsedProfile);
-          console.log('Loaded profile from localStorage fallback');
-        } catch (parseError) {
-          console.error('Error loading saved profile from localStorage:', parseError);
-        }
-      } else {
-        // If no localStorage fallback, check if we have email from auth state
-        if (userAuthState.emailId) {
-          setFormData(prev => ({
-            ...prev,
-            email: userAuthState.emailId
-          }));
-        }
+      // Try to parse error as JSON
+      let errorMessage = `Failed to load profile: ${response.status}`;
+      try {
+        const errorJson = JSON.parse(errorText);
+        errorMessage = errorJson.message || errorJson.error || errorMessage;
+      } catch (e) {
+        errorMessage = errorText || errorMessage;
       }
       
-      // Notify parent that profile is not complete due to error
+      setError(errorMessage);
+      
+      // Profile doesn't exist
+      setProfileExists(false);
       if (onProfileComplete) {
         onProfileComplete(false);
       }
-    } finally {
-      setLoading(false);
     }
-  };
+
+  } catch (error) {
+    console.error('Error fetching profile:', error);
+    setError('Failed to load profile. Please try again.');
+    
+    // Profile doesn't exist on error
+    setProfileExists(false);
+    
+    // Fallback to localStorage if API fails
+    const savedProfile = localStorage.getItem('patientProfile');
+    if (savedProfile) {
+      try {
+        const parsedProfile = JSON.parse(savedProfile);
+        setFormData(parsedProfile);
+        console.log('Loaded profile from localStorage fallback');
+      } catch (parseError) {
+        console.error('Error loading saved profile from localStorage:', parseError);
+      }
+    } else {
+      // If no localStorage fallback, check if we have email from auth state
+      if (userAuthState.emailId) {
+        setFormData(prev => ({
+          ...prev,
+          email: userAuthState.emailId
+        }));
+      }
+    }
+    
+    // Notify parent that profile is not complete due to error
+    if (onProfileComplete) {
+      onProfileComplete(false);
+    }
+  } finally {
+    setLoading(false);
+  }
+};
 
   // Calculate profile completion percentage
   useEffect(() => {
@@ -197,17 +238,37 @@ const Profile = ({ userData, onProfileComplete, isProfileComplete }) => {
     }));
   };
 
-  const handleSave = async () => {
-    try {
-      setLoading(true);
+const handleSave = async () => {
+  try {
+    setLoading(true);
+    setError('');
+    setSuccess('');
 
-      const userData = JSON.parse(localStorage.getItem("userData"));
-      const token = userData?.jwtToken.split(" ")[1];
-      const userId = userData?.userId;
+    const userData = JSON.parse(localStorage.getItem("userData"));
+    const token = userData?.jwtToken?.split(' ')[1];
+    const userId = userData?.userId;
 
-      console.log("Updating profile for userId:", userId);
+    if (!userId || !token) {
+      setError('Authentication required. Please log in again.');
+      return;
+    }
 
-      const response = await fetch(
+    console.log("Saving profile for userId:", userId);
+    console.log("Profile exists:", profileExists);
+
+    // Validate required fields
+    if (!formData.firstName || !formData.lastName || !formData.gender || !formData.phone) {
+      setError('Please fill all required fields (First Name, Last Name, Gender, Phone)');
+      return;
+    }
+
+    let apiResponse;
+    let isCreate = !profileExists; // Use profileExists state to determine create vs update
+
+    if (profileExists) {
+      // Profile exists, use PUT to update
+      console.log("Existing profile found, updating via PUT...");
+      apiResponse = await fetch(
         `${import.meta.env.VITE_PATIENT_SERVICE_BASE_URL}/${userId}`,
         {
           method: "PUT",
@@ -230,67 +291,127 @@ const Profile = ({ userData, onProfileComplete, isProfileComplete }) => {
           }),
         }
       );
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error("Failed to update profile:", response.status, errorText);
-        throw new Error(`Failed to update profile: ${response.status}`);
-      }
-
-      // const updatedPatient = await response.json();
-      // console.log("Profile updated successfully:", updatedPatient);
-
-      // Save to localStorage as backup
-      // localStorage.setItem('patientProfile', JSON.stringify(formData));
-      
-      // Check if profile is now complete
-      // const isComplete = checkProfileCompletion({
-      //   ...formData,
-      //   emailId: formData.email,
-      //   bloodGroup: formData.bloodType
-      // });
-      
-      // Notify parent component
-      if (onProfileComplete) {
-        onProfileComplete(isComplete);
-      }
-      
-      // Exit edit mode
-      setIsEditing(false);
-
-    } catch (err) {
-      console.error("Error updating profile:", err);
-      // You might want to show an error message to the user here
-    } finally {
-      setLoading(false);
+    } else {
+      // Profile doesn't exist, use POST to create
+      console.log("No existing profile found, creating via POST...");
+      apiResponse = await fetch(
+        `${import.meta.env.VITE_PATIENT_SERVICE_BASE_URL}`,
+        {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
+          body: JSON.stringify({
+            patientId: userId,
+            firstName: formData.firstName,
+            lastName: formData.lastName,
+            emailId: formData.email,
+            phone: formData.phone,
+            age: formData.age,
+            weight: formData.weight,
+            bloodGroup: formData.bloodType,
+            address: formData.address,
+            gender: formData.gender,
+          }),
+        }
+      );
     }
-  };
+
+    if (!apiResponse.ok) {
+      const errorText = await apiResponse.text();
+      console.error("Failed to save profile:", apiResponse.status, errorText);
+      
+      // Try to parse the error response as JSON, but handle text response too
+      let errorMessage = `Failed to save profile: ${apiResponse.status}`;
+      try {
+        // First try to parse as JSON
+        const errorJson = JSON.parse(errorText);
+        errorMessage = errorJson.message || errorJson.error || errorMessage;
+      } catch (e) {
+        // If not JSON, use the text as is (might be plain text like "Patient updated successfully")
+        errorMessage = errorText || errorMessage;
+      }
+      
+      throw new Error(errorMessage);
+    }
+
+    // Handle response - try JSON first, then text
+    let result;
+    const responseText = await apiResponse.text();
+    
+    try {
+      // Try to parse as JSON
+      result = JSON.parse(responseText);
+      console.log("Profile saved successfully (JSON):", result);
+    } catch (e) {
+      // If not JSON, treat as plain text success message
+      result = { message: responseText };
+      console.log("Profile saved successfully (text):", responseText);
+    }
+    
+    // Update profileExists state after successful save
+    setProfileExists(true);
+    
+    setSuccess(isCreate ? "Profile created successfully!" : "Profile updated successfully!");
+    
+    // Check if profile is now complete
+    const isComplete = checkProfileCompletion({
+      ...formData,
+      emailId: formData.email,
+      bloodGroup: formData.bloodType
+    });
+    
+    // Notify parent component
+    if (onProfileComplete) {
+      onProfileComplete(isComplete);
+    }
+    
+    // Refresh profile data after save
+    await fetchProfileData();
+    
+    // Exit edit mode after a short delay
+    setTimeout(() => {
+      setIsEditing(false);
+      setSuccess('');
+    }, 2000);
+
+  } catch (err) {
+    console.error("Error saving profile:", err);
+    setError(err.message || "Failed to save profile. Please try again.");
+  } finally {
+    setLoading(false);
+  }
+};
 
   const handleCancel = () => {
     fetchProfileData(); // Reload data from backend
     setIsEditing(false);
+    setError('');
+    setSuccess('');
   };
 
-const inputFields = [
-  { key: 'firstName', label: 'First Name', icon: <FiUser className="text-purple-500" />, type: 'text', required: true },
-  { key: 'lastName', label: 'Last Name', icon: <FiUser className="text-purple-500" />, type: 'text', required: true },
+  const inputFields = [
+    { key: 'firstName', label: 'First Name', icon: <FiUser className="text-purple-500" />, type: 'text', required: true },
+    { key: 'lastName', label: 'Last Name', icon: <FiUser className="text-purple-500" />, type: 'text', required: true },
+    { key: 'gender', label: 'Gender', icon: <FiUser className="text-purple-500" />, type: 'select', required: true, options: genderOptions },
+    { 
+      key: 'email', 
+      label: 'Email Address', 
+      icon: <FiMail className="text-purple-500" />, 
+      type: 'email', 
+      required: true,
+      disabled: true 
+    },
+    { key: 'phone', label: 'Phone Number', icon: <FiPhone className="text-purple-500" />, type: 'tel', required: true },
+    { key: 'bloodType', label: 'Blood Group', icon: <MdBloodtype className='text-purple-500'/>, type: 'select', required: true, options: bloodGroups },
+    { key: 'age', label: 'Age', icon: <FiCalendar className="text-purple-500" />, type: 'number', required: true },
+    { key: 'weight', label: 'Weight (kg)', icon: <FaWeight className='text-purple-500' />, type: 'number', required: true },
+    { key: 'address', label: 'Address', icon: <FiMapPin className="text-purple-500" />, type: 'text', required: true }
+  ];
 
-  // GENDER → the correct type is select
-  { key: 'gender', label: 'Patient Gender', icon: <FiUser className="text-purple-500" />, type: 'select', required: true, options: genderOptions },
-
-  { key: 'email', label: 'Email Address', icon: <FiMail className="text-purple-500" />, type: 'email', required: true },
-  { key: 'phone', label: 'Phone Number', icon: <FiPhone className="text-purple-500" />, type: 'tel', required: true },
-
-  // BLOOD GROUP (select needs options)
-  { key: 'bloodType', label: 'Blood Group', icon: <MdBloodtype className='text-purple-500'/>, type: 'select', required: true, options: bloodGroups },
-
-  { key: 'age', label: 'Age', icon: <FiCalendar className="text-purple-500" />, type: 'number', required: true },
-  { key: 'weight', label: 'Weight (kg)', icon: <FaWeight className='text-purple-500' />, type: 'number', required: true },
-  { key: 'address', label: 'Address', icon: <FiMapPin className="text-purple-500" />, type: 'text', required: true }
-];
-
-
-  if (loading) {
+  if (loading && !isEditing) {
     return (
       <div className="max-w-4xl mx-auto flex items-center justify-center h-64">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
@@ -300,6 +421,37 @@ const inputFields = [
 
   return (
     <div className="max-w-4xl mx-auto">
+      {/* Error and Success Messages */}
+      {error && (
+        <div className="mb-6 bg-red-50 border border-red-200 rounded-xl p-4">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center">
+              <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <div>
+              <p className="text-red-800 font-medium">Error</p>
+              <p className="text-red-700 text-sm">{error}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {success && (
+        <div className="mb-6 bg-green-50 border border-green-200 rounded-xl p-4">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+              <FiSave className="text-white text-sm" />
+            </div>
+            <div>
+              <p className="text-green-800 font-medium">Success</p>
+              <p className="text-green-700 text-sm">{success}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header with Progress Indicator */}
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-6">
         <div className="flex items-center gap-4">
@@ -341,13 +493,13 @@ const inputFields = [
               <button
                 onClick={handleCancel}
                 disabled={loading}
-                className="px-4 py-2.5 border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-xl font-semibold transition-colors disabled:opacity-50"
+                className="px-4 py-2.5 border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-xl font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Cancel
               </button>
               <button
                 onClick={handleSave}
-                disabled={loading || !isEditing}
+                disabled={loading}
                 className="flex items-center gap-2 px-4 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? (
@@ -355,7 +507,7 @@ const inputFields = [
                 ) : (
                   <FiSave className="text-lg" />
                 )}
-                {!isProfileComplete ? 'Complete Profile' : 'Save Changes'}
+                {!profileExists ? 'Create Profile' : 'Save Changes'}
               </button>
             </>
           ) : (
@@ -364,7 +516,7 @@ const inputFields = [
               className="flex items-center gap-2 px-4 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl"
             >
               <FiEdit className="text-lg" />
-              Edit Profile
+              {!profileExists ? 'Create Profile' : 'Edit Profile'}
             </button>
           )}
         </div>
@@ -394,24 +546,26 @@ const inputFields = [
               {isEditing ? (
                 field.type === 'select' ? (
                   <select
-                    value={formData[field.key]}
+                    value={formData[field.key] || ''}
                     onChange={(e) => handleInputChange(field.key, e.target.value)}
-                    className="w-full px-4 py-3 border border-purple-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all duration-200"
+                    className={`w-full px-4 py-3 border border-purple-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all duration-200 ${field.disabled ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : ''}`}
                     required={field.required}
+                    disabled={field.disabled || loading}
                   >
                     <option value="">Select {field.label}</option>
-                    {field.options.map(option => (
+                    {field.options?.map(option => (
                       <option key={option} value={option}>{option}</option>
                     ))}
                   </select>
                 ) : (
                   <input
                     type={field.type}
-                    value={formData[field.key]}
+                    value={formData[field.key] || ''}
                     onChange={(e) => handleInputChange(field.key, e.target.value)}
-                    className="w-full px-4 py-3 border border-purple-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all duration-200"
+                    className={`w-full px-4 py-3 border border-purple-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none transition-all duration-200 ${field.disabled ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : ''}`}
                     placeholder={`Enter ${field.label.toLowerCase()}`}
                     required={field.required}
+                    disabled={field.disabled || loading}
                   />
                 )
               ) : (
@@ -434,11 +588,13 @@ const inputFields = [
               </div>
               <div>
                 <p className="text-green-800 font-medium">Profile ready to complete!</p>
-                <p className="text-green-700 text-sm">Click "Complete Profile" to unlock all features</p>
+                <p className="text-green-700 text-sm">Click "Create Profile" to save your information</p>
               </div>
             </div>
           </div>
         )}
+
+      
       </div>
     </div>
   );
