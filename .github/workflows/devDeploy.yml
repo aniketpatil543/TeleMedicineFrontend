@@ -41,4 +41,4 @@ jobs:
 
 
       - name: Upload new build
-        run: aws s3 sync ./dist s3://tele-medicineapp --acl public-read
+        run: aws s3 sync ./dist s3://tele-medicineapp 
