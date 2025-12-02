@@ -43,12 +43,12 @@ const DoctorSidebar = ({
       label: 'Patients',
       requiresCompleteProfile: true 
     },
-    // { 
-    //   id: 'medical-records', 
-    //   icon: FaFileMedical, 
-    //   label: 'Medical Records',
-    //   requiresCompleteProfile: true 
-    // },
+    { 
+      id: 'medical-records', 
+      icon: FaFileMedical, 
+      label: 'Medical Records',
+      requiresCompleteProfile: true 
+    },
     // { 
     //   id: 'prescriptions', 
     //   icon: FaPills, 
