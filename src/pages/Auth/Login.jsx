@@ -51,9 +51,12 @@ const handleLogin = async (e) => {
 
   setIsLoading(true);
 
+  console.log(`${import.meta.env.VITE_AUTH_SERVICE_URL}/signin`);
+  
+
   try {
     const response = await axios.post(
-      `${import.meta.env.VITE_API_URL}/signin`,
+      `${import.meta.env.VITE_AUTH_SERVICE_URL}/signin`,
       {
         emailId: form.emailId,
         password: form.password
@@ -65,62 +68,55 @@ const handleLogin = async (e) => {
       }
     );
 
-    const userData = await response.data;
 
-    console.log('userData',userData)
+  
+
+    const responseData = await response.data;
+
+    console.log('userData ==> ',responseData)
     // Update Redux store
    // Determine profile (doctor or patient)
-let profile = null;
 
-if (userData.doctorProfile) {
-  profile = {
-    id: userData.doctorProfile.doctorId,
-    firstName: userData.doctorProfile.firstName,
-    lastName: userData.doctorProfile.lastName,
-    phone: userData.doctorProfile.phone,
-    department: userData.doctorProfile.department,
-    specialization: userData.doctorProfile.specialization,
-    experience: userData.doctorProfile.experience
-  };
-} else if (userData.patientProfile) {
-  profile = {
-    id: userData.userId,
-    firstName: userData.patientProfile.name,
-    phone: userData.patientProfile.phone,
-    age: userData.patientProfile.age,
-    gender: userData.patientProfile.gender
-  };
-}
+   let user = responseData?.doctorProfile != null ? responseData.doctorProfile : responseData?.patientProfile;
+
+
+   console.log("User ==> " + user);
+   
+
+
+
+  //  if(!userData ){
+
 
 // Now build Redux user object
 const userAuthData = {
-  emailId: userData.emailId,
-  token: userData.jwtToken,
-  role: userData.roles || userData.role,
-  user: profile,  // ⭐ Finally storing doctor or patient data here
+  token: responseData?.jwtToken,
+  role: responseData?.doctorProfile != null ? ["DOCTOR"] : ["PATIENT"],
+  user: user,
+ 
 };
 
 
     dispatch(loginSuccess(userAuthData));
     
     // Store user data in localStorage
-    localStorage.setItem(PERSIST_STORE_NAME, JSON.stringify(userData));
-    localStorage.setItem('authToken', userData.token || userData.accessToken);
-    
+    localStorage.setItem(PERSIST_STORE_NAME, JSON.stringify(responseData));
+    localStorage.setItem('authToken', responseData?.jwtToken );
+    redirectBasedOnRole(userAuthData.role);
 
-    // Parse JWT token to get roles
-    const token = userData.token || userData.accessToken;
-    if (token) {
-      const decodedToken = parseJwt(token);
-      console.log('Decoded token:', decodedToken);
+    // // Parse JWT token to get roles
+    // const token = userData.token || userData.accessToken;
+    // if (token) {
+    //   const decodedToken = parseJwt(token);
+    //   console.log('Decoded token:', decodedToken);
       
-      // Use roles from decoded JWT token
-      const userRoles = decodedToken.roles || decodedToken.role;
-      redirectBasedOnRole(userRoles);
-    } else {
-      // Fallback to userData roles if no token
-      redirectBasedOnRole(userData.roles || userData.role);
-    }
+    //   // Use roles from decoded JWT token
+    //   const userRoles = decodedToken.roles || decodedToken.role;
+    //   redirectBasedOnRole(userRoles);
+    // } else {
+    //   // Fallback to userData roles if no token
+    //   redirectBasedOnRole(userData.roles || userData.role);
+    // }
 
   } catch (error) {
     console.error("Login error:", error);
@@ -131,24 +127,24 @@ const userAuthData = {
 };
 
 
-const parseJwt = (token) => {
-  try {
-    const base64Url = token.split('.')[1];
-    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-    const jsonPayload = decodeURIComponent(
-      atob(base64)
-        .split('')
-        .map(function(c) {
-          return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-        })
-        .join('')
-    );
-    return JSON.parse(jsonPayload);
-  } catch (error) {
-    console.error('Error parsing JWT:', error);
-    return {};
-  }
-};
+// const parseJwt = (token) => {
+//   try {
+//     const base64Url = token.split('.')[1];
+//     const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+//     const jsonPayload = decodeURIComponent(
+//       atob(base64)
+//         .split('')
+//         .map(function(c) {
+//           return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+//         })
+//         .join('')
+//     );
+//     return JSON.parse(jsonPayload);
+//   } catch (error) {
+//     console.error('Error parsing JWT:', error);
+//     return {};
+//   }
+// };
 
 const redirectBasedOnRole = (roles) => {
   const userRoles = Array.isArray(roles) ? roles : [roles];

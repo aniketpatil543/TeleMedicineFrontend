@@ -30,19 +30,29 @@ import Notification from './components/Notification';
 import { useNavigate } from "react-router-dom";
 import { Toaster, toast } from 'react-hot-toast';
 import { useProfileCompletion } from './components/useProfileCompletion';
+import { useSelector } from 'react-redux';
 
 const DoctorDashboard = () => {
+  const { token ,  user } = useSelector((state) => state.auth);
   const [activeSection, setActiveSection] = useState('overview');
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [ isProfileComplete, setIsProfileComplete ] = useState(user.profileComplete) ;
+  const [ isLoading, setIsLoading ] = useState(false) ;
   const navigate = useNavigate();
-  
-  const { 
-    isProfileComplete, 
-    isLoading, 
-    markProfileAsComplete 
-  } = useProfileCompletion();
 
+    useEffect(()=>{
+    setIsProfileComplete( user.profileComplete ) ;
+  },[user])
+  
+  // const { 
+  //   isProfileComplete, 
+  //   isLoading, 
+  //   markProfileAsComplete 
+  // } = useProfileCompletion();
+   
+  console.log("isProfileComplete in DoctorDashboard:", isProfileComplete );
+  
   // Mock data
   const doctorData = {
     name: 'Dr. Sarah Johnson',

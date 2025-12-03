@@ -1,15 +1,19 @@
 import { useState, useEffect } from 'react';
+import { useSelector } from 'react-redux';
 
 export const usePatientProfileCompletion = () => {
   const [isProfileComplete, setIsProfileComplete] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  
+  const { token , user } = useSelector((state) => state.auth);
 
-  useEffect(() => {
-    checkProfileCompletion();
-  }, []);
+  
+  console.log("Thisss ==> " + isProfileComplete );
+  console.log( user);
+  
+  
 
   const checkProfileCompletion = () => {
-    const profileData = localStorage.getItem('userData').patientProfile;
+    const profileData = user ||  localStorage.getItem('userData').patientProfile;
     
     if (!profileData) {
       setIsProfileComplete(false);
@@ -22,16 +26,22 @@ export const usePatientProfileCompletion = () => {
       
       // Define required fields for patient profile completion
       const requiredFields = [
-        'name',
-        'email',
+        'firstName',
+        "lastName" ,
+        'emailId',
         'phone',
         'age',
-        'bloodType',
-        'address'
+        'bloodGroup',
+        'address',
+        "weight",
+        "gender",
+        "profileComplete"
       ];
 
       const isComplete = requiredFields.every(field => {
         const value = profile[field];
+        console.log("Value ==> " + value);
+        
         return value !== undefined && value !== null && value !== '';
       });
 
@@ -44,15 +54,19 @@ export const usePatientProfileCompletion = () => {
     setIsLoading(false);
   };
 
+   useEffect( () => {
+    checkProfileCompletion();
+  }, [user]);
+
   const markProfileAsComplete = (profileData) => {
     localStorage.setItem('patientProfile', JSON.stringify({
-      ...profileData,
-      isComplete: true,
-      completedAt: new Date().toISOString()
+      ...profileData
     }));
     setIsProfileComplete(true);
   };
+ 
 
+  
   return {
     isProfileComplete,
     isLoading,
