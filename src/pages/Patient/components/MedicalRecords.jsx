@@ -34,7 +34,7 @@ const MedicalRecords = () => {
       console.log("Fetching documents for patient:", userId);
 
       const response = await axios.get(
-        "http://localhost:8081/api/files/list",
+        "http://localhost:8087/api/files/list",
         {
           headers: {
             "X-Patient-Id": userId
@@ -138,7 +138,7 @@ const handleUpload = async () => {
 
     // actual API call
     const response = await axios.post(
-      "http://localhost:8081/api/files/upload",
+      "http://localhost:8087/api/files/upload",
       formData,
       {
         headers: {
@@ -186,7 +186,7 @@ const handleUpload = async () => {
 const handleDownload = async (doc) => {
   try {
     const response = await axios.get(
-      "http://localhost:8081/api/files/download-url",
+      "http://localhost:8087/api/files/download-url",
       {
         params: { fileName: doc.filename },
         headers: {
@@ -219,7 +219,7 @@ const handleDelete = async (documentId) => {
     return;
 
   try {
-    await axios.delete(`http://localhost:8081/api/files/delete/${documentId}`, {
+    await axios.delete(`http://localhost:8087/api/files/delete/${documentId}`, {
       headers: { "X-Patient-Id": userId }
     });
 
