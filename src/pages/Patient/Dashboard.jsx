@@ -13,6 +13,7 @@ import { useNavigate } from "react-router-dom";
 import { Toaster, toast } from 'react-hot-toast';
 import { usePatientProfileCompletion } from './components/usePatientProfileCompletion';
 import { FaExclamationTriangle, FaUserCircle } from 'react-icons/fa';
+import { useSelector } from 'react-redux';
 
 const Dashboard = () => {
   const [activeSection, setActiveSection] = useState('overview');
@@ -20,12 +21,19 @@ const Dashboard = () => {
   const [userData, setUserData] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(false);
 
-  const { 
-    isProfileComplete, 
-    isLoading, 
-    markProfileAsComplete 
-  } = usePatientProfileCompletion();
+  const authState = useSelector((state)=>state.auth ) ;
+  const [isProfileComplete,setIsProfileComplete] = useState(authState.user.profileComplete) ;
+  console.log("isProfileComplete in Dashboard:", isProfileComplete );
+  console.log(authState);
+  
+
+
+  useEffect(()=>{
+    setIsProfileComplete( authState.user.profileComplete ) ;
+  },[authState]) ;
+  
 
   useEffect(() => {
     // Load saved profile data first
@@ -148,6 +156,8 @@ const Dashboard = () => {
 
   // Enhanced section change handler with profile completion check
   const handleSectionChange = (section) => {
+    console.log(isProfileComplete);
+    
     if (!isProfileComplete && section !== 'profile' && section !== 'notifications') {
       toast.error('Please complete your profile first', {
         duration: 3000,

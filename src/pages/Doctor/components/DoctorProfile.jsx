@@ -15,9 +15,11 @@ import {
   TbStethoscope,
   TbBuildingHospital,
 } from 'react-icons/tb';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
+import { updateProfile } from '../../../store/slices/authSlice';
 
-const DoctorProfile = ({ doctorData, onProfileComplete, isProfileComplete }) => {
+
+const DoctorProfile = ({ isProfileComplete }) => {
   const [isEditing, setIsEditing] = useState(!isProfileComplete);
   const [activeTab, setActiveTab] = useState('profile');
   const [profileProgress, setProfileProgress] = useState(0);
@@ -25,25 +27,18 @@ const DoctorProfile = ({ doctorData, onProfileComplete, isProfileComplete }) => 
   const [availabilityLoading, setAvailabilityLoading] = useState(false);
   const [availabilityError, setAvailabilityError] = useState('');
   const [availabilitySuccess, setAvailabilitySuccess] = useState('');
+  const [ profileExists , setProfileExists ] = useState( isProfileComplete ) ;
+  const { token ,  user } = useSelector((state) => state.auth);
+const dispatch = useDispatch() ;
+
+  console.log("Docter Profile Exists ==> " + profileExists);
   
-  const userAuthState = useSelector(state => state.auth);
+  
 
-  // Get API base URL with fallback
-  const getApiBaseUrl = () => {
-    if (import.meta.env.VITE_DOCTOR_SERVICE_BASE_URL) {
-      return import.meta.env.VITE_DOCTOR_SERVICE_BASE_URL;
-    }
-    console.warn('VITE_DOCTOR_SERVICE_BASE_URL is not set, using default localhost');
-    return 'http://localhost:8084'; // Changed to 8084 based on your logs
-  };
 
-  // Get user data
-  const userData = JSON.parse(localStorage.getItem('userData'));
-  const userId = userData?.userId || userAuthState?.user?.id;
-  const token = userData?.jwtToken || userAuthState?.token;
 
   // Gender options - UPDATED to match backend enum
-  const genderOptions = ['MALE', 'FEMALE', 'OTHER', 'PREFER_NOT_TO_SAY'];
+  const genderOptions = ['Male', 'Female', 'Other'];
   
   const departmentOptions = [
     'EMERGENCY',
@@ -69,16 +64,16 @@ const DoctorProfile = ({ doctorData, onProfileComplete, isProfileComplete }) => 
   ];
   
   const [profileData, setProfileData] = useState({
-    doctorId: userId || '',
-    firstName: '',
-    lastName: '',
-    email: userAuthState?.emailId || '',
-    phone: '',
-    gender: '',
-    address: '',
-    specialization: '',
-    department: '',
-    experience: '',
+    userId: user.doctorId || '',
+    firstName: user.firstName ||  '',
+    lastName:   user.lastName || '',
+    email:  user.emailId || '',
+    phone:  user.phoneNumber || '',
+    doctorGender:  user.gender || '',
+    address:  user.address || '',
+    specialization: user.specialization ||   '',
+    department:  user.department || '',
+    experience: user.experience || '',
   });
 
   const [availabilityData, setAvailabilityData] = useState({
@@ -93,6 +88,11 @@ const DoctorProfile = ({ doctorData, onProfileComplete, isProfileComplete }) => 
     },
     appointmentDuration: 30
   });
+
+
+  console.log("availabilityData ==> " );
+   console.log( availabilityData );
+  
 
   // Helper function to check if profile is complete
   const checkProfileCompletion = (profileData) => {
@@ -112,105 +112,7 @@ const DoctorProfile = ({ doctorData, onProfileComplete, isProfileComplete }) => 
     );
   };
 
-  // Load saved profile data from backend/API
-  useEffect(() => {
-    fetchProfileData();
-  }, [userAuthState]);
 
-  const fetchProfileData = async () => {
-    try {
-      setLoading(true);
-      
-      if (!userId) {
-        console.error('User ID not found');
-        throw new Error('User ID not found');
-      }
-
-      let authToken = token;
-      if (authToken && authToken.startsWith('Bearer ')) {
-        authToken = authToken.split(' ')[1];
-      }
-      
-      if (!authToken) {
-        console.error('Authentication token not found');
-        throw new Error('Authentication required');
-      }
-
-      const apiBaseUrl = getApiBaseUrl();
-
-      // Fetch profile data
-      const profileResponse = await fetch(
-        `${apiBaseUrl}/manage/${userId}`,
-        {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${authToken}`,
-            'Content-Type': 'application/json',
-          },
-        }
-      );
-
-      if (profileResponse.ok) {
-        const data = await profileResponse.json();
-        console.log('Profile data received:', data);
-        
-        setProfileData({
-          doctorId: data.doctorId || userId,
-          firstName: data.firstName || '',
-          lastName: data.lastName || '',
-          email: data.emailId || userAuthState?.emailId || '',
-          phone: data.phone || '',
-          gender: data.gender || '',
-          address: data.address || '',
-          specialization: data.specialization || '',
-          department: data.department || '',
-          experience: data.experience || '',
-        });
-
-        // Fetch availability separately
-        await fetchAvailability(authToken, apiBaseUrl);
-
-        const isComplete = checkProfileCompletion(data);
-        if (onProfileComplete) {
-          onProfileComplete(isComplete ? data : false);
-        }
-
-      } else if (profileResponse.status === 404) {
-        console.log('No existing profile found - starting with empty form');
-        setProfileData(prev => ({
-          ...prev,
-          email: userAuthState?.emailId || ''
-        }));
-        
-        if (onProfileComplete) {
-          onProfileComplete(false);
-        }
-      } else {
-        const errorText = await profileResponse.text();
-        throw new Error(`Failed to fetch profile: ${profileResponse.status} - ${errorText}`);
-      }
-
-    } catch (error) {
-      console.error('Error fetching profile:', error);
-      
-      const savedProfile = localStorage.getItem('doctorProfile');
-      if (savedProfile) {
-        try {
-          const parsedProfile = JSON.parse(savedProfile);
-          setProfileData(parsedProfile);
-          console.log('Loaded profile from localStorage fallback');
-        } catch (parseError) {
-          console.error('Error loading saved profile from localStorage:', parseError);
-        }
-      }
-      
-      if (onProfileComplete) {
-        onProfileComplete(false);
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
 
  const fetchAvailability = async (authToken, apiBaseUrl) => {
   try {
@@ -277,7 +179,7 @@ const DoctorProfile = ({ doctorData, onProfileComplete, isProfileComplete }) => 
       profileData.firstName,
       profileData.lastName,
       profileData.email,
-      profileData.gender,
+      profileData.doctorGender,
       profileData.phone,
       profileData.specialization,
       profileData.department,
@@ -296,7 +198,7 @@ const DoctorProfile = ({ doctorData, onProfileComplete, isProfileComplete }) => 
     try {
       setLoading(true);
       
-      if (!token || !userId) {
+      if (!token) {
         alert('Authentication required. Please log in again.');
         return;
       }
@@ -306,60 +208,103 @@ const DoctorProfile = ({ doctorData, onProfileComplete, isProfileComplete }) => 
         authToken = authToken.split(' ')[1];
       }
 
-      const apiBaseUrl = getApiBaseUrl();
-      
-      // Save basic doctor profile
-      const profileResponse = await fetch(
-        `${apiBaseUrl}/manage/create`,
-        {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${authToken}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            doctorId: userId,
+
+
+      if( !profileExists ){
+
+              // Save basic doctor profile
+
+              console.log("(profileData.experience) ==> " + parseInt(profileData.experience));
+              
+
+              const body = {
+            doctorId: user.doctorId,
             firstName: profileData.firstName,
             lastName: profileData.lastName,
             emailId: profileData.email,
-            phone: profileData.phone,
-            gender: profileData.gender,
+            phoneNumber: profileData.phone,
+            gender: profileData.doctorGender,
             address: profileData.address,
             specialization: profileData.specialization,
             department: profileData.department,
             experience: parseInt(profileData.experience) || 0,
-          }),
+            profileComplete:true
+          };
+        console.log("body ==> " + body );
+        console.log("Gendder ==> " + profileData.doctorGender);
+        console.log(`${import.meta.env.VITE_DOCTOR_SERVICE_BASE_URL}/manage/create`);
+        
+        
+      const profileResponse = await fetch(
+        `${import.meta.env.VITE_DOCTOR_SERVICE_BASE_URL}/manage/create`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(body) ,
         }
       );
 
-      if (!profileResponse.ok) {
-        const errorText = await profileResponse.text();
-        throw new Error(`Failed to update profile: ${profileResponse.status} - ${errorText}`);
-      }
 
-      const updatedDoctor = await profileResponse.json();
-      console.log('Profile updated successfully:', updatedDoctor);
-      
-      localStorage.setItem('doctorProfile', JSON.stringify(profileData));
-      
-      const isComplete = checkProfileCompletion({
-        ...profileData,
-        emailId: profileData.email
-      });
-      
-      if (isComplete && onProfileComplete) {
-        onProfileComplete(profileData);
-      }
-      
-      setIsEditing(false);
-      alert('Profile saved successfully!');
+      const data = await profileResponse.json();
+      console.log('Profile CREATED successfully:', data);
+      dispatch(updateProfile(data)) ;
+    
+    }
+    else{
+      // Save basic doctor profile
 
-    } catch (error) {
-      console.error('Error updating profile:', error);
-      alert(`Failed to update profile: ${error.message}. Please try again.`);
+              const body = {
+            doctorId: user.doctorId,
+            firstName: profileData.firstName,
+            lastName: profileData.lastName,
+            emailId: profileData.email,
+            phoneNumber: profileData.phone,
+            gender: profileData.doctorGender,
+            address: profileData.address,
+            specialization: profileData.specialization,
+            department: profileData.department,
+            experience: parseInt(profileData.experience) || 0,
+            profileComplete:true 
+          };
+
+
+          
+          
+        console.log("body ==> " + body );
+        
+      const profileResponse = await fetch(
+        `${import.meta.env.VITE_DOCTOR_SERVICE_BASE_URL}/manage/${user?.doctorId}`,
+        {
+          method: 'PUT',
+          headers: {
+            'Authorization': `${token}`,
+            'Content-Type': 'application/json',
+          },
+          body:JSON.stringify( body ) ,
+        }
+      );
+
+
+      const data = await profileResponse.json();
+      console.log('Profile saved successfully:', data);
+      dispatch(updateProfile(data)) ;
+
+    }
+
+    setIsEditing(false);
+      
+    }
+    catch (error) {
+      console.error('Error saving profile:', error);
+      alert(`Failed to save profile: ${error.message}`);
     } finally {
       setLoading(false);
+
     }
+  
   };
 
   const handleSaveAvailability = async () => {
@@ -368,7 +313,7 @@ const DoctorProfile = ({ doctorData, onProfileComplete, isProfileComplete }) => 
       setAvailabilityError('');
       setAvailabilitySuccess('');
       
-      if (!token || !userId) {
+      if (!token ) {
         alert('Authentication required. Please log in again.');
         return;
       }
@@ -378,84 +323,58 @@ const DoctorProfile = ({ doctorData, onProfileComplete, isProfileComplete }) => 
         authToken = authToken.split(' ')[1];
       }
 
-      const apiBaseUrl = getApiBaseUrl();
-
       // Clear existing availability first
       try {
+
+        const body = JSON.stringify({
+              "doctorId": user.doctorId ,
+              "appointmentDuration": availabilityData.appointmentDuration,
+              "workingHours": availabilityData.workingHours
+            }) ;
         const existingAvailability = await fetch(
-          `${apiBaseUrl}/availability/${userId}`,
+          `${import.meta.env.VITE_DOCTOR_SERVICE_BASE_URL}/availability`,
           {
-            method: 'GET',
+            method: 'PUT',
             headers: {
-              'Authorization': `Bearer ${authToken}`,
+              'Authorization': `${token}`,
               'Content-Type': 'application/json',
             },
+            body: body,
           }
         );
 
         if (existingAvailability.ok) {
           const slots = await existingAvailability.json();
-          for (const slot of slots) {
-            await fetch(
-              `${apiBaseUrl}/availability/${userId}/slot/${slot.id}`,
-              {
-                method: 'DELETE',
-                headers: {
-                  'Authorization': `Bearer ${authToken}`,
-                },
-              }
-            );
-          }
+
+          console.log(" Updated Slots ==>  "  );
+          console.log(slots);
+
+
+          setAvailabilityData(prev => ({
+            ...prev,
+            appointmentDuration: slots.appointmentDuration,
+            workingHours: slots.workingHours
+
+          }));
+          
+          
+     
         }
       } catch (error) {
         console.warn('Could not clear existing availability:', error);
       }
 
-      // Save new availability for enabled days
-      let savedCount = 0;
-      for (const [day, schedule] of Object.entries(availabilityData.workingHours)) {
-        if (schedule.enabled && schedule.start && schedule.end) {
-          const availabilityDTO = {
-            doctorId: parseInt(userId),
-            availableDate: new Date().toISOString().split('T')[0], // Today's date
-            startTime: schedule.start + ':00', // Add seconds
-            endTime: schedule.end + ':00', // Add seconds
-          };
-
-          const response = await fetch(
-            `${apiBaseUrl}/availability`,
-            {
-              method: 'POST',
-              headers: {
-                'Authorization': `Bearer ${authToken}`,
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify(availabilityDTO),
-            }
-          );
-          
-          if (response.ok) {
-            savedCount++;
-          } else {
-            console.warn(`Failed to save availability for ${day}:`, response.status);
-          }
-        }
-      }
-
-      setAvailabilitySuccess(`Successfully saved ${savedCount} availability slots!`);
-      setTimeout(() => setAvailabilitySuccess(''), 3000);
+      setAvailabilitySuccess('Availability saved successfully.');
 
     } catch (error) {
       console.error('Error saving availability:', error);
       setAvailabilityError(`Failed to save availability: ${error.message}`);
-      setTimeout(() => setAvailabilityError(''), 5000);
     } finally {
       setAvailabilityLoading(false);
     }
   };
 
   const handleCancel = () => {
-    fetchProfileData();
     setIsEditing(false);
   };
 
@@ -652,7 +571,7 @@ const DoctorProfile = ({ doctorData, onProfileComplete, isProfileComplete }) => 
               <div className="flex items-center justify-between p-3 bg-blue-50 rounded-xl">
                 <span className="text-sm text-blue-700">Doctor ID</span>
                 <span className="text-sm font-medium text-blue-900">
-                  {profileData.doctorId || userId || 'Not set'}
+                  {profileData.userId || 'Not set'}
                 </span>
               </div>
               <div className="flex items-center justify-between p-3 bg-green-50 rounded-xl">
@@ -712,7 +631,7 @@ const PersonalInfoTab = ({ data, isEditing, onChange, genderOptions }) => {
     { key: 'lastName', label: 'Last Name', icon: <FiUser className="text-blue-500" />, type: 'text', required: true },
     { key: 'email', label: 'Email Address', icon: <FiMail className="text-blue-500" />, type: 'email', required: true },
     { key: 'phone', label: 'Phone Number', icon: <FiPhone className="text-blue-500" />, type: 'tel', required: true },
-    { key: 'gender', label: 'Gender', icon: <FiUser className="text-blue-500" />, type: 'select', required: true, options: genderOptions },
+    { key: 'doctorGender', label: 'Gender', icon: <FiUser className="text-blue-500" />, type: 'select', required: true, options: genderOptions },
     { key: 'address', label: 'Address', icon: <FiMapPin className="text-blue-500" />, type: 'text', required: false }
   ];
 
@@ -736,9 +655,9 @@ const PersonalInfoTab = ({ data, isEditing, onChange, genderOptions }) => {
                   <option value="">Select {field.label}</option>
                   {field.options.map(option => (
                     <option key={option} value={option}>
-                      {option === 'MALE' ? 'Male' : 
-                       option === 'FEMALE' ? 'Female' : 
-                       option === 'OTHER' ? 'Other' : 
+                      {option === 'Male' ? 'Male' : 
+                       option === 'Female' ? 'Female' : 
+                       option === 'Other' ? 'Other' : 
                        'Prefer not to say'}
                     </option>
                   ))}

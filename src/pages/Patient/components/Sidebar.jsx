@@ -15,6 +15,7 @@ import {
   TbPill
 } from 'react-icons/tb';
 import { MdLogout } from "react-icons/md";
+import { useSelector } from 'react-redux';
 
 const Sidebar = ({ 
   activeSection, 
@@ -26,8 +27,15 @@ const Sidebar = ({
   mobileMenuOpen,
   onToggleMobileMenu,
   onLogout,
-  isProfileComplete // Add this prop
+
 }) => {
+
+  // const 
+
+  const { user } = useSelector((state) => state.auth);
+
+  console.log("Is Profile Complete ==> " + user.profileComplete);
+  
   const menuItems = [
     { 
       id: 'overview', 
@@ -74,7 +82,12 @@ const Sidebar = ({
   ];
 
   const handleMenuClick = (sectionId, requiresCompleteProfile) => {
-    if (requiresCompleteProfile && !isProfileComplete) {
+    if (requiresCompleteProfile && !user.profileComplete) {
+      console.log(sectionId + ' is disabled until profile is complete.');
+      console.log(requiresCompleteProfile + " requiresCompleteProfile");
+      console.log( " isProfileComplete: " + user.profileComplete);
+      
+      
       return;
     }
     
@@ -138,7 +151,7 @@ const Sidebar = ({
         </div>
 
         {/* Profile Completion Status */}
-        {!isProfileComplete && sidebarOpen && (
+        {!user.profileComplete && sidebarOpen && (
           <div className="mx-4 mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg">
             <div className="flex items-center gap-2 mb-1">
               <FiLock className="text-amber-600 text-sm" />
@@ -153,8 +166,11 @@ const Sidebar = ({
         {/* Navigation Menu */}
         <nav className="p-4 space-y-2 flex-1">
           {menuItems.map((item) => {
-            const isDisabled = item.requiresCompleteProfile && !isProfileComplete;
+            const isDisabled = item.requiresCompleteProfile && !user.profileComplete;
             const isActive = activeSection === item.id;
+
+            console.log("isDisabled ==> " + isDisabled + " for item " + item.id);
+            
             
             return (
               <button

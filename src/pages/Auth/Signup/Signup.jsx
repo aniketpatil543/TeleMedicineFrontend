@@ -155,7 +155,7 @@ export default function Signup() {
     }
 
     try {
-      const url=`${import.meta.env.VITE_API_URL}/signup`
+      const url=`${import.meta.env.VITE_AUTH_SERVICE_URL}/signup`
       const url2="http://localhost:8081/auth/signup";
 
       const response = await axios.post(url, {
