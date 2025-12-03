@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  FiSearch, 
-  FiCalendar, 
-  FiClock, 
-  FiUser, 
-  FiMapPin, 
-  FiStar, 
+import {
+  FiSearch,
+  FiCalendar,
+  FiClock,
+  FiUser,
+  FiMapPin,
+  FiStar,
   FiFilter,
   FiChevronLeft,
   FiChevronRight,
@@ -30,10 +30,10 @@ const BookAppointment = () => {
   const [loadingAvailability, setLoadingAvailability] = useState(false);
   const [error, setError] = useState('');
   // Update selectedSlot to include availabilityId
-  const [selectedSlot, setSelectedSlot] = useState({ 
-    availabilityId: '', 
-    date: '', 
-    time: '' 
+  const [selectedSlot, setSelectedSlot] = useState({
+    availabilityId: '',
+    date: '',
+    time: ''
   });
 
   const userAuthState = useSelector((state) => state.auth);
@@ -85,7 +85,7 @@ const BookAppointment = () => {
       setError('');
 
       const response = await api.get('/patients/appointment/doctors');
-      
+     
       // Transform API data to match frontend structure
       const transformedDoctors = response.data.map(doctor => ({
         id: doctor.doctorId,
@@ -119,15 +119,15 @@ const BookAppointment = () => {
   const fetchDoctorAvailability = async (doctorId) => {
     try {
       setLoadingAvailability(true);
-      
+     
       const response = await api.get(`/patients/appointment/${doctorId}/availability`);
-      
+     
       // Add unique ID to each availability slot if not present
       const availabilityWithIds = response.data.map((slot, index) => ({
         ...slot,
         availabilityId: slot.id || slot.availabilityId || `slot-${index}-${Date.now()}`
       }));
-      
+     
       setAvailability(availabilityWithIds);
       // Reset selected slot when availability changes
       setSelectedSlot({ availabilityId: '', date: '', time: '' });
@@ -146,7 +146,7 @@ const BookAppointment = () => {
   const bookAppointment = async () => {
     try {
       setLoading(true);
-      
+     
       // Use selectedSlot state
       if (!selectedDoctor || !selectedSlot.date || !selectedSlot.time) {
         throw new Error('Please select doctor, date, and time');
@@ -160,7 +160,7 @@ const BookAppointment = () => {
       // Convert time to 24-hour format and create proper LocalDateTime
       const time24Hour = convertTo24Hour(selectedSlot.time);
       const scheduledDateTime = `${selectedSlot.date}T${time24Hour}:00`;
-      
+     
       console.log('Sending appointment data:', {
         patientId: userId,
         doctorId: selectedDoctor.id,
@@ -182,7 +182,7 @@ const BookAppointment = () => {
       }
 
       const response = await api.post('/patients/visits/book', appointmentData);
-      
+     
       console.log('Appointment booked successfully:', response.data);
       setShowConfirmation(true);
 
@@ -261,7 +261,7 @@ const BookAppointment = () => {
     const slots = [];
     const start = new Date(`2000-01-01T${availabilitySlot.startTime}`);
     const end = new Date(`2000-01-01T${availabilitySlot.endTime}`);
-    
+   
     // Generate 30-minute slots
     let current = new Date(start);
     while (current < end) {
@@ -350,7 +350,7 @@ const BookAppointment = () => {
               className="w-full pl-12 pr-4 py-3 border border-[#E8E0FF] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#8B5FBF] focus:border-transparent"
             />
           </div>
-          
+         
           <div className="flex gap-2 overflow-x-auto pb-2 lg:pb-0">
             {specialties.map(specialty => (
               <button
@@ -419,7 +419,7 @@ const BookAppointment = () => {
                       <p className="text-sm text-[#8B5FBF]">Consultation</p>
                     </div>
                   </div>
-                  
+                 
                   <div className="flex items-center space-x-2 mt-2">
                     <div className="flex items-center space-x-1">
                       <FiStar className="text-yellow-400 fill-current" />
@@ -429,14 +429,14 @@ const BookAppointment = () => {
                     <span className="text-[#8B5FBF]">•</span>
                     <span className="text-[#8B5FBF] text-sm">{doctor.experience}</span>
                   </div>
-                  
+                 
                   <div className="flex items-center space-x-2 mt-2 text-sm text-[#8B5FBF]">
                     <FiMapPin />
                     <span>{doctor.location}</span>
                   </div>
-                  
+                 
                   <p className="text-[#8B5FBF] text-sm mt-2 line-clamp-2">{doctor.bio}</p>
-                  
+                 
                   <div className="flex flex-wrap gap-1 mt-3">
                     {doctor.availability.map(day => (
                       <span
@@ -515,7 +515,7 @@ const BookAppointment = () => {
             <FiLoader className="ml-2 animate-spin text-[#8B5FBF]" />
           )}
         </h3>
-        
+       
         {loadingAvailability ? (
           <div className="flex justify-center py-8">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#6D48C5]"></div>
@@ -526,7 +526,7 @@ const BookAppointment = () => {
               const dateStr = availSlot.availableDate;
               const timeSlots = generateTimeSlotsFromAvailability(availSlot);
               const availabilityId = availSlot.availabilityId;
-              
+             
               return (
                 <div key={availabilityId} className="border border-[#E8E0FF] rounded-xl p-4">
                   <div className="flex justify-between items-center mb-3">
@@ -545,19 +545,19 @@ const BookAppointment = () => {
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
                     {timeSlots.map(time => {
                       const slotKey = `${availabilityId}-${dateStr}-${time}`;
-                      const isSelected = selectedSlot.availabilityId === availabilityId && 
-                                        selectedSlot.date === dateStr && 
+                      const isSelected = selectedSlot.availabilityId === availabilityId &&
+                                        selectedSlot.date === dateStr &&
                                         selectedSlot.time === time;
-                      
+                     
                       return (
                         <button
                           key={slotKey}
                           onClick={() => {
                             // Set the complete slot information including availabilityId
-                            setSelectedSlot({ 
-                              availabilityId, 
-                              date: dateStr, 
-                              time 
+                            setSelectedSlot({
+                              availabilityId,
+                              date: dateStr,
+                              time
                             });
                             // Also update the old separate states for compatibility
                             setSelectedDate(dateStr);
@@ -608,8 +608,8 @@ const BookAppointment = () => {
           <FiChevronLeft />
           <span>Back</span>
         </button>
-        
-        {selectedSlot.date && selectedSlot.time && (
+       
+        {/* {selectedSlot.date && selectedSlot.time && ( */}
           <button
             onClick={() => setActiveStep(3)}
             className="bg-gradient-to-r from-[#8B5FBF] to-[#6D48C5] hover:from-[#7A4FA8] hover:to-[#5D3AA8] text-white px-8 py-3 rounded-xl font-semibold transition-all duration-200 shadow-sm flex items-center space-x-2"
@@ -617,7 +617,7 @@ const BookAppointment = () => {
             <span>Review Booking</span>
             <FiChevronRight />
           </button>
-        )}
+        {/* )} */}
       </div>
     </div>
   );
@@ -664,16 +664,16 @@ const BookAppointment = () => {
               <div>
                 <p className="text-[#8B5FBF] text-sm">Date</p>
                 <p className="font-semibold text-[#6D48C5]">
-                  {new Date(selectedSlot.date).toLocaleDateString('en-US', { 
-                    weekday: 'long', 
-                    year: 'numeric', 
-                    month: 'long', 
-                    day: 'numeric' 
+                  {new Date(selectedSlot.date).toLocaleDateString('en-US', {
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
                   })}
                 </p>
               </div>
             </div>
-            
+           
             <div className="flex items-center space-x-3">
               <FiClock className="text-[#8B5FBF]" />
               <div>
@@ -682,7 +682,7 @@ const BookAppointment = () => {
               </div>
             </div>
           </div>
-          
+         
           <div className="space-y-3">
             <div className="flex items-center space-x-3">
               <FiMapPin className="text-[#8B5FBF]" />
@@ -691,7 +691,7 @@ const BookAppointment = () => {
                 <p className="font-semibold text-[#6D48C5]">{selectedDoctor.location}</p>
               </div>
             </div>
-            
+           
             <div className="flex items-center space-x-3">
               <FiUser className="text-[#8B5FBF]" />
               <div>
@@ -720,7 +720,7 @@ const BookAppointment = () => {
           <FiChevronLeft />
           <span>Back</span>
         </button>
-        
+       
         <button
           onClick={bookAppointment}
           disabled={loading}
@@ -742,25 +742,25 @@ const BookAppointment = () => {
       <div className="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
         <FiCheck className="text-green-600 text-3xl" />
       </div>
-      
+     
       <h2 className="text-3xl font-bold text-[#6D48C5] mb-4">Appointment Booked!</h2>
       <p className="text-[#8B5FBF] text-lg mb-2">
         Your appointment with <span className="font-semibold text-[#6D48C5]">{selectedDoctor.name}</span> has been confirmed.
       </p>
       <p className="text-[#8B5FBF] mb-6">
-        {new Date(selectedSlot.date).toLocaleDateString('en-US', { 
-          weekday: 'long', 
-          year: 'numeric', 
-          month: 'long', 
-          day: 'numeric' 
+        {new Date(selectedSlot.date).toLocaleDateString('en-US', {
+          weekday: 'long',
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric'
         })} at {selectedSlot.time}
       </p>
-      
+     
       <div className="bg-[#F4F0FF] border border-[#E8E0FF] rounded-2xl p-6 max-w-md mx-auto mb-8">
         <p className="text-[#8B5FBF] text-sm mb-2">Appointment ID</p>
         <p className="font-mono font-bold text-[#6D48C5] text-lg">APT-{Date.now().toString().slice(-6)}</p>
       </div>
-      
+     
       <div className="flex flex-col sm:flex-row gap-4 justify-center">
         <button
           onClick={resetBooking}

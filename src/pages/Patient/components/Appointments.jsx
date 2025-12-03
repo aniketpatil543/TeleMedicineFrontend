@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  FiCalendar, 
-  FiUser, 
-  FiMapPin, 
-  FiClock, 
+import {
+  FiCalendar,
+  FiUser,
+  FiMapPin,
+  FiClock,
   FiMoreVertical,
   FiRefreshCw,
   FiX,
@@ -19,7 +19,10 @@ import axios from 'axios';
 
 const Appointments = ({ setActiveSection }) => {
   const userAuthState = useSelector((state) => state.auth);
-  const userId = userAuthState.user?.id;
+  const userId = userAuthState.user?.patientId;
+
+  console.log("userAuthState in Appointments:", userAuthState);
+  
 
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -75,7 +78,7 @@ const Appointments = ({ setActiveSection }) => {
       setError('');
 
       const response = await api.get(`/patients/visits/${userId}/upcoming`);
-      
+     
       // Transform API data to match frontend structure
       const transformedAppointments = response.data.map(visit => ({
         id: visit.visitId,
@@ -160,7 +163,7 @@ const Appointments = ({ setActiveSection }) => {
     setSelectedAppointment(appointment);
     setShowRescheduleModal(true);
     setActiveMenu(null);
-    
+   
     // Set default reschedule date to current appointment date
     setRescheduleDate(appointment.date);
     setRescheduleTime(appointment.time.replace(' AM', '').replace(' PM', ''));
@@ -169,7 +172,7 @@ const Appointments = ({ setActiveSection }) => {
 
   const handleRescheduleSubmit = async (e) => {
     e.preventDefault();
-    
+   
     if (!rescheduleDate || !rescheduleTime) {
       alert('Please select both date and time');
       return;
@@ -182,17 +185,17 @@ const Appointments = ({ setActiveSection }) => {
 
       // Note: You'll need to implement a reschedule API endpoint
       // For now, we'll update locally
-      const updatedAppointments = appointments.map(apt => 
-        apt.id === selectedAppointment.id 
-          ? { 
-              ...apt, 
+      const updatedAppointments = appointments.map(apt =>
+        apt.id === selectedAppointment.id
+          ? {
+              ...apt,
               date: rescheduleDate,
               time: rescheduleTime + (parseInt(rescheduleTime.split(':')[0]) >= 12 ? ' PM' : ' AM'),
               status: 'rescheduled'
             }
           : apt
       );
-      
+     
       setAppointments(updatedAppointments);
       setSuccessMessage(`Appointment with ${selectedAppointment.doctor} has been rescheduled to ${formatDate(rescheduleDate)} at ${rescheduleTime + (parseInt(rescheduleTime.split(':')[0]) >= 12 ? ' PM' : ' AM')}`);
       setShowRescheduleModal(false);
@@ -214,9 +217,9 @@ const Appointments = ({ setActiveSection }) => {
     try {
       // Note: You'll need to implement a cancel API endpoint
       // For now, we'll update locally
-      setAppointments(prev => 
-        prev.map(apt => 
-          apt.id === selectedAppointment.id 
+      setAppointments(prev =>
+        prev.map(apt =>
+          apt.id === selectedAppointment.id
             ? { ...apt, status: 'cancelled' }
             : apt
         )
@@ -254,8 +257,8 @@ const Appointments = ({ setActiveSection }) => {
   };
 
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('en-US', { 
-      month: 'short', 
+    return new Date(dateString).toLocaleDateString('en-US', {
+      month: 'short',
       day: 'numeric',
       year: 'numeric'
     });
@@ -276,15 +279,15 @@ const Appointments = ({ setActiveSection }) => {
   const convertTo24Hour = (time12h) => {
     const [time, modifier] = time12h.split(' ');
     let [hours, minutes] = time.split(':');
-    
+   
     if (hours === '12') {
       hours = '00';
     }
-    
+   
     if (modifier === 'PM') {
       hours = parseInt(hours, 10) + 12;
     }
-    
+   
     return `${hours.padStart(2, '0')}:${minutes}`;
   };
 
@@ -326,7 +329,7 @@ const Appointments = ({ setActiveSection }) => {
         <h2 className="text-2xl font-bold text-[#6D48C5]">Appointments</h2>
         <button
           onClick={() => setActiveSection("book-appointment")}
-          className="bg-gradient-to-r from-[#8B5FBF] to-[#6D48C5] hover:from-[#7A4FA8] hover:to-[#5D3AA8] 
+          className="bg-gradient-to-r from-[#8B5FBF] to-[#6D48C5] hover:from-[#7A4FA8] hover:to-[#5D3AA8]
           text-white px-4 py-2 rounded-lg font-medium transition-all duration-200 shadow-sm flex items-center space-x-2"
         >
           <FiPlus />
@@ -360,7 +363,7 @@ const Appointments = ({ setActiveSection }) => {
           <div className="p-6 border-b border-[#E8E0FF]">
             <h3 className="text-xl font-semibold text-[#6D48C5]">Upcoming Appointments</h3>
           </div>
-          
+         
           {appointments.length > 0 ? (
             <div className="divide-y divide-[#F4F0FF]">
               {appointments.map(appointment => (
@@ -375,33 +378,33 @@ const Appointments = ({ setActiveSection }) => {
                         <p className="text-[#8B5FBF] text-sm">{appointment.specialty}</p>
                       </div>
                     </div>
-                    
+                   
                     <div className="text-center">
                       <p className="font-semibold text-[#6D48C5]">
                         {formatDate(appointment.date)}
                       </p>
                       <p className="text-[#8B5FBF] text-sm">{appointment.time}</p>
                     </div>
-                    
+                   
                     <div>
                       <p className="text-[#6D48C5] font-medium">{appointment.type}</p>
                       <p className="text-[#8B5FBF] text-sm">{appointment.location}</p>
                     </div>
-                    
+                   
                     <div className="flex items-center space-x-3">
                       <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(appointment.status)}`}>
                         {appointment.status.charAt(0).toUpperCase() + appointment.status.slice(1)}
                       </span>
-                      
+                     
                       {/* Three dots menu */}
                       <div className="relative">
-                        <button 
+                        <button
                           onClick={() => toggleMenu(appointment.id)}
                           className="text-[#6D48C5] hover:text-[#8B5FBF] p-2 rounded-lg hover:bg-[#F4F0FF] transition-colors"
                         >
                           <FiMoreVertical />
                         </button>
-                        
+                       
                         {/* Dropdown menu */}
                         {activeMenu === appointment.id && (
                           <div className="absolute right-0 top-10 bg-white rounded-lg shadow-lg border border-[#E8E0FF] z-10 min-w-48">
@@ -547,7 +550,7 @@ const Appointments = ({ setActiveSection }) => {
               <h3 className="text-xl font-semibold text-[#6D48C5] mb-2">Cancel Appointment</h3>
               <p className="text-[#8B5FBF]">Are you sure you want to cancel this appointment?</p>
             </div>
-            
+           
             <div className="bg-[#F4F0FF] border border-[#E8E0FF] rounded-lg p-4 mb-6">
               <p className="font-semibold text-[#6D48C5] text-center">{selectedAppointment.doctor}</p>
               <p className="text-[#8B5FBF] text-sm text-center">{selectedAppointment.specialty}</p>
@@ -555,7 +558,7 @@ const Appointments = ({ setActiveSection }) => {
                 {formatDate(selectedAppointment.date)} at {selectedAppointment.time}
               </p>
             </div>
-            
+           
             <div className="flex space-x-3">
               <button
                 onClick={closeModal}
@@ -690,8 +693,8 @@ const Appointments = ({ setActiveSection }) => {
 
       {/* Close dropdown when clicking outside */}
       {activeMenu && (
-        <div 
-          className="fixed inset-0 z-0" 
+        <div
+          className="fixed inset-0 z-0"
           onClick={() => setActiveMenu(null)}
         />
       )}

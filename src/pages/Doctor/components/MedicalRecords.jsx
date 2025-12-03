@@ -20,7 +20,7 @@ const MedicalRecords = () => {
   // Fetch ALL documents (doctor access)
   useEffect(() => {
     axios
-      .get("http://localhost:8088/api/files/doctor/all")
+      .get("http://localhost:8087/api/files/doctor/all")
       .then((res) => setRecords(res.data))
       .catch((err) => console.error("Error fetching documents:", err));
   }, []);
@@ -29,7 +29,7 @@ const MedicalRecords = () => {
   const handleView = async (record) => {
     try {
       const { data: url } = await axios.get(
-        `http://localhost:8088/api/files/doctor/download-url?fileName=${record.fileName}`
+        `http://localhost:8087/api/files/doctor/download-url?fileName=${record.fileName}`
       );
 
       setPreviewUrl(url);       // S3 preview URL
@@ -43,7 +43,7 @@ const MedicalRecords = () => {
   const handleDownload = async (fileName) => {
     try {
       const { data: url } = await axios.get(
-        `http://localhost:8088/api/files/doctor/download-url?fileName=${fileName}`
+        `http://localhost:8087/api/files/doctor/download-url?fileName=${fileName}`
       );
       window.open(url, "_blank"); // open in new tab
     } catch (error) {

@@ -34,11 +34,7 @@ const MedicalRecords = () => {
       console.log("Fetching documents for patient:", userId);
 
       const response = await axios.get(
-<<<<<<< HEAD
-        "http://localhost:8088/api/files/list",
-=======
         "http://localhost:8087/api/files/list",
->>>>>>> 24dea2d744fa18330e463bcdf843355eb2f54989
         {
           headers: {
             "X-Patient-Id": userId
@@ -142,11 +138,7 @@ const handleUpload = async () => {
 
     // actual API call
     const response = await axios.post(
-<<<<<<< HEAD
-      "http://localhost:8088/api/files/upload",
-=======
       "http://localhost:8087/api/files/upload",
->>>>>>> 24dea2d744fa18330e463bcdf843355eb2f54989
       formData,
       {
         headers: {
@@ -194,11 +186,7 @@ const handleUpload = async () => {
 const handleDownload = async (doc) => {
   try {
     const response = await axios.get(
-<<<<<<< HEAD
-      "http://localhost:8088/api/files/download-url",
-=======
       "http://localhost:8087/api/files/download-url",
->>>>>>> 24dea2d744fa18330e463bcdf843355eb2f54989
       {
         params: { fileName: doc.filename },
         headers: {
@@ -231,11 +219,7 @@ const handleDelete = async (documentId) => {
     return;
 
   try {
-<<<<<<< HEAD
-    await axios.delete(`http://localhost:8088/api/files/delete/${documentId}`, {
-=======
     await axios.delete(`http://localhost:8087/api/files/delete/${documentId}`, {
->>>>>>> 24dea2d744fa18330e463bcdf843355eb2f54989
       headers: { "X-Patient-Id": userId }
     });
 
